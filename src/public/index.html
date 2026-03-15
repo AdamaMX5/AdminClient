@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Freischule Admin</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <aside class="sidebar">
+    <div class="logo">Freischule <span>Admin</span></div>
+    <nav>
+      <button class="nav-btn active" data-section="auth-service">AuthService</button>
+      <button class="nav-btn" data-section="freeschool">FreeSchool</button>
+      <button class="nav-btn" data-section="migration">Migration</button>
+    </nav>
+    <div class="sidebar-footer">
+      <span id="user-email" class="user-email"></span>
+      <button id="logout-btn" class="btn-ghost">Abmelden</button>
+    </div>
+  </aside>
+
+  <main class="content">
+
+    <!-- ── AuthService ─────────────────────────────────────────── -->
+    <section id="section-auth-service" class="section active">
+      <div class="section-header">
+        <h1>AuthService</h1>
+        <span id="auth-service-badge" class="badge"></span>
+      </div>
+
+      <div class="tabs">
+        <button class="tab-btn active" data-tab="as-users">Benutzer</button>
+        <button class="tab-btn" data-tab="as-jwt">JWT-Schlüssel</button>
+      </div>
+
+      <!-- Users tab -->
+      <div id="tab-as-users" class="tab-content active">
+        <div class="toolbar">
+          <button class="btn" onclick="loadAuthUsers()">Aktualisieren</button>
+          <label class="btn btn-secondary">
+            JSON importieren
+            <input type="file" id="auth-import-file" accept=".json" style="display:none" onchange="importAuthUsers(this)" />
+          </label>
+        </div>
+        <div id="auth-users-table"></div>
+
+        <!-- Edit roles panel -->
+        <div id="auth-role-panel" class="panel hidden">
+          <h3>Rollen bearbeiten — <span id="auth-role-user-email"></span></h3>
+          <input id="auth-role-input" type="text" placeholder='z.B. ADMIN, USER' />
+          <div class="panel-actions">
+            <button class="btn" onclick="saveAuthRoles()">Speichern</button>
+            <button class="btn-ghost" onclick="closeAuthRolePanel()">Abbrechen</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- JWT tab -->
+      <div id="tab-as-jwt" class="tab-content">
+        <div class="toolbar">
+          <button class="btn" onclick="loadJwtKeyStorage()">Schlüssel-Info laden</button>
+        </div>
+        <pre id="jwt-key-info" class="code-block">–</pre>
+      </div>
+    </section>
+
+    <!-- ── FreeSchool ──────────────────────────────────────────── -->
+    <section id="section-freeschool" class="section">
+      <div class="section-header">
+        <h1>FreeSchool</h1>
+        <span id="freeschool-badge" class="badge"></span>
+      </div>
+
+      <div class="tabs">
+        <button class="tab-btn active" data-tab="fs-users">Benutzer</button>
+        <button class="tab-btn" data-tab="fs-backup">Backup</button>
+      </div>
+
+      <!-- Users tab -->
+      <div id="tab-fs-users" class="tab-content active">
+        <div class="toolbar">
+          <button class="btn" onclick="loadFsUsers()">Aktualisieren</button>
+        </div>
+        <div id="fs-users-table"></div>
+
+        <!-- Edit roles panel -->
+        <div id="fs-role-panel" class="panel hidden">
+          <h3>Rollen bearbeiten — <span id="fs-role-user-email"></span></h3>
+          <div id="fs-role-checkboxes" class="role-grid"></div>
+          <div class="panel-actions">
+            <button class="btn" onclick="saveFsRoles()">Speichern</button>
+            <button class="btn-ghost" onclick="closeFsRolePanel()">Abbrechen</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Backup tab -->
+      <div id="tab-fs-backup" class="tab-content">
+        <div class="toolbar">
+          <button class="btn" onclick="downloadFsBackupJson()">JSON-Backup herunterladen</button>
+          <button class="btn" onclick="downloadFsBackupSql()">SQL-Backup herunterladen</button>
+        </div>
+        <p class="hint">Die Backups werden direkt vom FreeSchool-Server gestreamt und als Datei gespeichert.</p>
+      </div>
+    </section>
+
+    <!-- ── Migration ──────────────────────────────────────────── -->
+    <section id="section-migration" class="section">
+      <div class="section-header">
+        <h1>Migration</h1>
+        <span class="badge warn">FreeSchool → AuthService</span>
+      </div>
+
+      <div class="migration-info">
+        <p>Exportiert alle Benutzer aus <strong>FreeSchool</strong> und importiert sie in den <strong>AuthService</strong>.</p>
+        <p class="warn-text">⚠ Passwort-Hashes sind inkompatibel (argon2 vs. bcrypt). Migrierte Benutzer müssen ihr Passwort zurücksetzen.</p>
+      </div>
+
+      <div class="toolbar">
+        <button class="btn" onclick="previewMigration()">Vorschau laden</button>
+        <button class="btn btn-danger" id="run-migration-btn" onclick="runMigration()" disabled>Migration ausführen</button>
+      </div>
+
+      <div id="migration-preview"></div>
+      <div id="migration-result"></div>
+    </section>
+
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>

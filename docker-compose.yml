@@ -1,0 +1,21 @@
+services:
+  admin-client:
+    build: .
+    container_name: admin-client
+    restart: unless-stopped
+    env_file: .env
+    ports:
+      - "3000:3000"
+    labels:
+      # Traefik-Labels für admin.freischule.info
+      - "traefik.enable=true"
+      - "traefik.http.routers.admin-client.rule=Host(`admin.freischule.info`)"
+      - "traefik.http.routers.admin-client.entrypoints=websecure"
+      - "traefik.http.routers.admin-client.tls.certresolver=letsencrypt"
+      - "traefik.http.services.admin-client.loadbalancer.server.port=3000"
+    networks:
+      - web
+
+networks:
+  web:
+    external: true
