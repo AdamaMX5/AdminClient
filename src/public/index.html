@@ -13,6 +13,7 @@
       <button class="nav-btn active" data-section="auth-service">AuthService</button>
       <button class="nav-btn" data-section="freeschool">FreeSchool</button>
       <button class="nav-btn" data-section="migration">Migration</button>
+      <button class="nav-btn" data-section="logs">Logs</button>
     </nav>
     <div class="sidebar-footer">
       <span id="user-email" class="user-email"></span>
@@ -124,6 +125,52 @@
 
       <div id="migration-preview"></div>
       <div id="migration-result"></div>
+    </section>
+
+    <!-- ── Logs ───────────────────────────────────────────────── -->
+    <section id="section-logs" class="section">
+      <div class="section-header">
+        <h1>Logs</h1>
+      </div>
+
+      <div class="logs-controls">
+        <div class="logs-services">
+          <label><input type="checkbox" class="logs-svc" value="auth" checked /> AuthService</label>
+          <label><input type="checkbox" class="logs-svc" value="presence" checked /> PresenceService</label>
+          <label><input type="checkbox" class="logs-svc" value="virtual-office" checked /> VirtualOffice</label>
+          <label><input type="checkbox" class="logs-svc" value="profil" checked /> ProfilService</label>
+          <label><input type="checkbox" class="logs-svc" value="email" checked /> EmailService</label>
+          <label><input type="checkbox" class="logs-svc" value="freeschool" checked /> FreeSchool</label>
+        </div>
+        <div class="toolbar">
+          <label class="logs-label">Letzte
+            <input type="number" id="logs-minutes" class="logs-input" value="5" min="1" max="1440" />
+            Minuten
+          </label>
+          <select id="logs-level" class="logs-input">
+            <option value="">Alle Level</option>
+            <option value="DEBUG">DEBUG</option>
+            <option value="INFO">INFO</option>
+            <option value="WARNING">WARNING</option>
+            <option value="ERROR">ERROR</option>
+            <option value="CRITICAL">CRITICAL</option>
+          </select>
+          <input type="text" id="logs-search" class="logs-input logs-search" placeholder="Suche in Message…" oninput="filterLogsTable()" />
+          <label class="logs-label">Limit
+            <input type="number" id="logs-limit" class="logs-input" value="200" min="1" max="1000" style="width:70px" />
+          </label>
+          <button class="btn" onclick="loadLogs()">Abrufen</button>
+          <label class="logs-label">
+            <input type="checkbox" id="logs-auto-refresh" />
+            Auto (30s)
+          </label>
+        </div>
+      </div>
+
+      <div id="logs-errors"></div>
+      <p id="logs-status" class="loading-text"></p>
+      <div id="logs-table"></div>
+      <div id="logs-pagination" class="toolbar" style="margin-top:0.75rem;align-items:center"></div>
     </section>
 
   </main>

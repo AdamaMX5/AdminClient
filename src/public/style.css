@@ -320,3 +320,72 @@ tr:hover td { background: rgba(255,255,255,0.02); }
 .hidden { display: none !important; }
 
 .loading-text { color: var(--muted); font-size: 0.85rem; padding: 0.5rem 0; }
+
+/* ── Logs ──────────────────────────────────────────────────── */
+.logs-controls {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 0.75rem;
+  padding: 1rem 1.25rem;
+  margin-bottom: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.logs-services {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.logs-services label {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.logs-label {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.85rem;
+  white-space: nowrap;
+}
+
+.logs-input {
+  padding: 0.4rem 0.6rem;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  color: var(--text);
+  font-size: 0.85rem;
+}
+
+.logs-input:focus { outline: 2px solid var(--accent); border-color: transparent; }
+
+.logs-search { min-width: 180px; }
+
+.badge.debug { background: var(--surface); color: var(--muted); border: 1px solid var(--border); }
+
+.svc-pill {
+  display: inline-block;
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+  background: #1e3a5f;
+  color: #93c5fd;
+  font-size: 0.7rem;
+  white-space: nowrap;
+}
+
+.log-msg {
+  max-width: 560px;
+  word-break: break-word;
+  font-size: 0.82rem;
+  line-height: 1.4;
+}
+
+code.ts   { font-size: 0.78rem; color: var(--muted); }
+code.req-id { font-size: 0.7rem; color: var(--muted); }

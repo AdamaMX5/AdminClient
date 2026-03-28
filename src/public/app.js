@@ -54,6 +54,8 @@ async function bootstrap() {
   // Auto-load first tab data
   if (me.services.authService) loadAuthUsers();
   if (me.services.freeSchool) loadFsUsers();
+
+  setupLogsSection();
 }
 
 // ── Helpers ──────────────────────────────────────────────────
@@ -332,6 +334,138 @@ async function runMigration() {
     if (err.message !== 'session expired') renderError(el, 'Fehler: ' + err.message);
     btn.disabled = false;
   }
+}
+
+// ── Logs ─────────────────────────────────────────────────────
+
+let logsAutoRefreshTimer = null;
+let logsCurrentOffset = 0;
+let logsLastData = [];
+
+function getLogsParams() {
+  const minutes = document.getElementById('logs-minutes').value || '5';
+  const level = document.getElementById('logs-level').value;
+  const limit = document.getElementById('logs-limit').value || '200';
+  const services = [...document.querySelectorAll('.logs-svc:checked')].map(cb => cb.value).join(',');
+  return { minutes, level, limit, services };
+}
+
+async function loadLogs(offset = 0) {
+  logsCurrentOffset = offset;
+  const { minutes, level, limit, services } = getLogsParams();
+  const statusEl = document.getElementById('logs-status');
+  const errorsEl = document.getElementById('logs-errors');
+
+  statusEl.textContent = 'Lade Logs…';
+  errorsEl.innerHTML = '';
+
+  const params = new URLSearchParams({ minutes, limit, offset: String(offset) });
+  if (level) params.set('level', level);
+  if (services) params.set('services', services);
+
+  try {
+    const res = await apiFetch('/api/logs?' + params.toString());
+    const data = await res.json();
+
+    if (data.errors && Object.keys(data.errors).length > 0) {
+      errorsEl.innerHTML = Object.entries(data.errors)
+        .map(([svc, err]) => `<p class="error">⚠ ${svc}: ${err}</p>`)
+        .join('');
+    }
+
+    logsLastData = data.logs ?? [];
+    statusEl.textContent = `${logsLastData.length} Einträge geladen`;
+    filterLogsTable();
+    renderLogsPagination(offset, Number(limit), data.total);
+  } catch (err) {
+    if (err.message !== 'session expired') {
+      statusEl.textContent = '';
+      document.getElementById('logs-table').innerHTML = `<p class="error">Fehler: ${err.message}</p>`;
+    }
+  }
+}
+
+function filterLogsTable() {
+  const search = (document.getElementById('logs-search').value ?? '').toLowerCase();
+  const filtered = search
+    ? logsLastData.filter(l => (l.message ?? '').toLowerCase().includes(search))
+    : logsLastData;
+  const statusEl = document.getElementById('logs-status');
+  if (logsLastData.length > 0) {
+    statusEl.textContent = filtered.length < logsLastData.length
+      ? `${filtered.length} / ${logsLastData.length} Einträge (gefiltert)`
+      : `${logsLastData.length} Einträge geladen`;
+  }
+  renderLogsTable(filtered);
+}
+
+function escapeHtml(str) {
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+function logLevelClass(level) {
+  switch ((level ?? '').toUpperCase()) {
+    case 'CRITICAL': return 'badge error';
+    case 'ERROR':    return 'badge error';
+    case 'WARNING':  return 'badge warn';
+    case 'INFO':     return 'badge ok';
+    default:         return 'badge debug';
+  }
+}
+
+function renderLogsTable(logs) {
+  const el = document.getElementById('logs-table');
+  if (!logs.length) {
+    el.innerHTML = '<p class="loading-text">Keine Log-Einträge gefunden.</p>';
+    return;
+  }
+  el.innerHTML = `
+    <table>
+      <thead><tr>
+        <th>Zeitstempel</th>
+        <th>Level</th>
+        <th>Service</th>
+        <th>Message</th>
+        <th>Request-ID</th>
+      </tr></thead>
+      <tbody>
+        ${logs.map(l => `
+          <tr>
+            <td><code class="ts">${l.timestamp ? new Date(l.timestamp).toLocaleString('de-DE') : '–'}</code></td>
+            <td><span class="${logLevelClass(l.level)}">${escapeHtml(l.level ?? '–')}</span></td>
+            <td><span class="svc-pill">${escapeHtml(l.service ?? '–')}</span></td>
+            <td class="log-msg">${escapeHtml(l.message ?? '')}</td>
+            <td><code class="req-id">${escapeHtml(l.request_id ?? '–')}</code></td>
+          </tr>`).join('')}
+      </tbody>
+    </table>`;
+}
+
+function renderLogsPagination(offset, limit, total) {
+  const el = document.getElementById('logs-pagination');
+  if (total <= limit) { el.innerHTML = ''; return; }
+  const page = Math.floor(offset / limit) + 1;
+  const totalPages = Math.ceil(total / limit);
+  el.innerHTML = `
+    <button class="btn-ghost" ${offset === 0 ? 'disabled' : ''} onclick="loadLogs(${Math.max(0, offset - limit)})">← Zurück</button>
+    <span class="hint">Seite ${page} / ${totalPages}</span>
+    <button class="btn-ghost" ${page >= totalPages ? 'disabled' : ''} onclick="loadLogs(${offset + limit})">Weiter →</button>`;
+}
+
+function setupLogsSection() {
+  const autoRefreshCb = document.getElementById('logs-auto-refresh');
+  autoRefreshCb.addEventListener('change', () => {
+    if (logsAutoRefreshTimer) { clearInterval(logsAutoRefreshTimer); logsAutoRefreshTimer = null; }
+    if (autoRefreshCb.checked) logsAutoRefreshTimer = setInterval(() => loadLogs(logsCurrentOffset), 30000);
+  });
+
+  document.querySelector('[data-section="logs"]').addEventListener('click', () => {
+    if (!logsLastData.length) loadLogs();
+  });
 }
 
 // ── Start ────────────────────────────────────────────────────
