@@ -5,6 +5,7 @@ import {
   refreshAuthToken,
   proxyToService,
 } from '../lib/tokenUtils';
+import { getActiveGroup } from '../lib/configStore';
 
 const router = Router();
 router.use(requireSession);
@@ -22,7 +23,7 @@ async function getAuthToken(req: Request, res: Response): Promise<string | null>
 }
 
 function authUrl(path: string): string {
-  return `${process.env.AUTH_SERVICE_URL}${path}`;
+  return `${getActiveGroup().authServiceUrl}${path}`;
 }
 
 // ---------------------------------------------------------------------------

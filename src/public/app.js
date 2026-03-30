@@ -54,6 +54,9 @@ async function bootstrap() {
   // Auto-load first tab data
   if (me.services.authService) loadAuthUsers();
   if (me.services.freeSchool) loadFsUsers();
+
+  // Load settings when that section is opened
+  document.querySelector('[data-section="settings"]').addEventListener('click', loadSettings);
 }
 
 // ── Helpers ──────────────────────────────────────────────────
@@ -331,6 +334,125 @@ async function runMigration() {
   } catch (err) {
     if (err.message !== 'session expired') renderError(el, 'Fehler: ' + err.message);
     btn.disabled = false;
+  }
+}
+
+// ── Einstellungen — Servergruppen ─────────────────────────────
+
+let editingGroupName = null; // null = neue Gruppe, string = bearbeiten
+
+async function loadSettings() {
+  const res = await apiFetch('/api/config');
+  const cfg = await res.json();
+  renderServerGroups(cfg.groups, cfg.activeGroup);
+}
+
+function renderServerGroups(groups, activeGroup) {
+  const el = document.getElementById('server-groups-list');
+  if (!groups.length) { el.innerHTML = '<p class="loading-text">Keine Gruppen.</p>'; return; }
+
+  el.innerHTML = `
+    <table>
+      <thead><tr>
+        <th>Aktiv</th><th>Name</th><th>AuthService URL</th><th>FreeSchool URL</th><th></th>
+      </tr></thead>
+      <tbody>
+        ${groups.map(g => `
+          <tr class="${g.name === activeGroup ? 'row-active' : ''}">
+            <td>
+              ${g.name === activeGroup
+                ? '<span class="badge ok">aktiv</span>'
+                : `<button class="btn-ghost" onclick="activateGroup('${g.name}')">Aktivieren</button>`}
+            </td>
+            <td><strong>${g.name}</strong></td>
+            <td><code class="url-cell">${g.authServiceUrl || '–'}</code></td>
+            <td><code class="url-cell">${g.freeSchoolUrl || '–'}</code></td>
+            <td style="white-space:nowrap">
+              <button class="btn-ghost" onclick="editGroup('${g.name}')">Bearbeiten</button>
+              ${g.name !== activeGroup
+                ? `<button class="btn-ghost danger-ghost" onclick="deleteGroup('${g.name}')">Löschen</button>`
+                : ''}
+            </td>
+          </tr>`).join('')}
+      </tbody>
+    </table>`;
+}
+
+async function activateGroup(name) {
+  const res = await apiFetch('/api/config/active', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name }),
+  });
+  if (res.ok) {
+    loadSettings();
+  } else {
+    const d = await res.json();
+    alert('Fehler: ' + (d.error ?? 'Unbekannt'));
+  }
+}
+
+async function deleteGroup(name) {
+  if (!confirm(`Gruppe "${name}" wirklich löschen?`)) return;
+  const res = await apiFetch(`/api/config/groups/${encodeURIComponent(name)}`, { method: 'DELETE' });
+  if (res.ok) {
+    loadSettings();
+  } else {
+    const d = await res.json();
+    alert('Fehler: ' + (d.error ?? 'Unbekannt'));
+  }
+}
+
+function editGroup(name) {
+  const rows = document.querySelectorAll('#server-groups-list tbody tr');
+  // find matching group data from the table (re-fetch to be safe)
+  apiFetch('/api/config').then(r => r.json()).then(cfg => {
+    const g = cfg.groups.find(g => g.name === name);
+    if (!g) return;
+    editingGroupName = name;
+    document.getElementById('group-form-title').textContent = `Gruppe bearbeiten: ${name}`;
+    document.getElementById('gf-name').value = g.name;
+    document.getElementById('gf-auth-url').value = g.authServiceUrl;
+    document.getElementById('gf-fs-url').value = g.freeSchoolUrl;
+    document.getElementById('group-form-error').classList.add('hidden');
+    document.getElementById('group-form-panel').scrollIntoView({ behavior: 'smooth' });
+  });
+}
+
+function resetGroupForm() {
+  editingGroupName = null;
+  document.getElementById('group-form-title').textContent = 'Neue Gruppe';
+  document.getElementById('gf-name').value = '';
+  document.getElementById('gf-auth-url').value = '';
+  document.getElementById('gf-fs-url').value = '';
+  document.getElementById('group-form-error').classList.add('hidden');
+}
+
+async function saveGroup() {
+  const name = document.getElementById('gf-name').value.trim();
+  const authServiceUrl = document.getElementById('gf-auth-url').value.trim();
+  const freeSchoolUrl = document.getElementById('gf-fs-url').value.trim();
+  const errEl = document.getElementById('group-form-error');
+
+  if (!name || !authServiceUrl || !freeSchoolUrl) {
+    errEl.textContent = 'Alle Felder sind erforderlich.';
+    errEl.classList.remove('hidden');
+    return;
+  }
+
+  const res = await apiFetch('/api/config/groups', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name, authServiceUrl, freeSchoolUrl }),
+  });
+
+  if (res.ok) {
+    resetGroupForm();
+    loadSettings();
+  } else {
+    const d = await res.json();
+    errEl.textContent = d.error ?? 'Fehler beim Speichern';
+    errEl.classList.remove('hidden');
   }
 }
 

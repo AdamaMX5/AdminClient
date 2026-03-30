@@ -1,4 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
+import { getActiveGroup } from './configStore';
 
 /**
  * Decodes a JWT payload without verifying signature.
@@ -33,7 +34,7 @@ export async function refreshAuthToken(req: Request): Promise<boolean> {
   if (!refreshToken) return false;
 
   try {
-    const res = await fetch(`${process.env.AUTH_SERVICE_URL}/user/refresh`, {
+    const res = await fetch(`${getActiveGroup().authServiceUrl}/user/refresh`, {
       method: 'POST',
       headers: { Cookie: `refresh_token=${refreshToken}` },
     });

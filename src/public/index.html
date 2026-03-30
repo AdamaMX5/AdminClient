@@ -13,6 +13,7 @@
       <button class="nav-btn active" data-section="auth-service">AuthService</button>
       <button class="nav-btn" data-section="freeschool">FreeSchool</button>
       <button class="nav-btn" data-section="migration">Migration</button>
+      <button class="nav-btn" data-section="settings">Einstellungen</button>
     </nav>
     <div class="sidebar-footer">
       <span id="user-email" class="user-email"></span>
@@ -124,6 +125,43 @@
 
       <div id="migration-preview"></div>
       <div id="migration-result"></div>
+    </section>
+
+    <!-- ── Einstellungen ───────────────────────────────────────── -->
+    <section id="section-settings" class="section">
+      <div class="section-header">
+        <h1>Einstellungen</h1>
+      </div>
+
+      <h2 class="settings-heading">Servergruppen</h2>
+      <p class="hint" style="margin-bottom:1rem">
+        Jede Gruppe enthält die URLs für AuthService und FreeSchool.
+        Die aktive Gruppe wird für alle API-Anfragen verwendet.
+      </p>
+
+      <div id="server-groups-list"></div>
+
+      <!-- Add / Edit form -->
+      <div class="panel" id="group-form-panel" style="margin-top:1.5rem;max-width:520px">
+        <h3 id="group-form-title">Neue Gruppe</h3>
+        <div class="form-row">
+          <label>Name</label>
+          <input id="gf-name" type="text" placeholder="z.B. Produktion" />
+        </div>
+        <div class="form-row">
+          <label>AuthService URL</label>
+          <input id="gf-auth-url" type="url" placeholder="https://auth.example.com" />
+        </div>
+        <div class="form-row">
+          <label>FreeSchool URL</label>
+          <input id="gf-fs-url" type="url" placeholder="https://api.example.com" />
+        </div>
+        <div class="panel-actions">
+          <button class="btn" onclick="saveGroup()">Speichern</button>
+          <button class="btn-ghost" onclick="resetGroupForm()">Abbrechen</button>
+        </div>
+        <p id="group-form-error" class="error hidden"></p>
+      </div>
     </section>
 
   </main>

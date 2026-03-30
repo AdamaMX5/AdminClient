@@ -1,11 +1,12 @@
 import { Router, Request, Response } from 'express';
 import { requireSession, proxyToService } from '../lib/tokenUtils';
+import { getActiveGroup } from '../lib/configStore';
 
 const router = Router();
 router.use(requireSession);
 
 function fsUrl(path: string): string {
-  return `${process.env.FREESCHOOL_URL}${path}`;
+  return `${getActiveGroup().freeSchoolUrl}${path}`;
 }
 
 function getFreeSchoolToken(req: Request, res: Response): string | null {

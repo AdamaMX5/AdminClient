@@ -1,0 +1,1221 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Freischule Admin</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #0f172a;
+      --surface:   #1e293b;
+      --border:    #334155;
+      --text:      #e2e8f0;
+      --muted:     #94a3b8;
+      --accent:    #38bdf8;
+      --ok:        #86efac;
+      --ok-bg:     #14532d;
+      --warn:      #fbbf24;
+      --warn-bg:   #451a03;
+      --danger:    #f87171;
+      --danger-bg: #450a0a;
+    }
+
+    body {
+      font-family: system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      font-size: 0.9rem;
+    }
+
+    /* ── Login ─────────────────────────────────────────────── */
+    .login-wrap {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+    }
+
+    .login-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 1rem;
+      padding: 2rem;
+      width: 100%;
+      max-width: 380px;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .login-sub { color: var(--muted); font-size: 0.85rem; }
+
+    .login-card form { display: flex; flex-direction: column; gap: 0.6rem; }
+    .login-card label { font-size: 0.8rem; color: var(--muted); }
+    .login-card input, .login-card select {
+      padding: 0.55rem 0.75rem;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 0.5rem;
+      color: var(--text);
+      font-size: 0.9rem;
+      width: 100%;
+    }
+    .login-card input:focus, .login-card select:focus {
+      outline: 2px solid var(--accent);
+      border-color: transparent;
+    }
+    .login-card button[type=submit] {
+      margin-top: 0.25rem;
+      padding: 0.55rem;
+      background: var(--accent);
+      color: #0f172a;
+      border: none;
+      border-radius: 0.5rem;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 0.9rem;
+    }
+    .login-card button[type=submit]:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .service-status { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+
+    /* ── Dashboard layout ──────────────────────────────────── */
+    .dashboard {
+      display: grid;
+      grid-template-columns: 220px 1fr;
+      min-height: 100vh;
+    }
+
+    .sidebar {
+      background: var(--surface);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      padding: 1.25rem 1rem;
+      gap: 1.5rem;
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      overflow-y: auto;
+    }
+
+    .logo { font-size: 1.15rem; font-weight: 700; letter-spacing: 0.04em; }
+    .logo span { color: var(--accent); }
+
+    nav { display: flex; flex-direction: column; gap: 0.35rem; }
+
+    .nav-btn {
+      background: transparent;
+      border: none;
+      color: var(--muted);
+      text-align: left;
+      padding: 0.5rem 0.75rem;
+      border-radius: 0.5rem;
+      cursor: pointer;
+      font-size: 0.9rem;
+      transition: background 0.15s, color 0.15s;
+    }
+    .nav-btn:hover { background: var(--bg); color: var(--text); }
+    .nav-btn.active { background: var(--bg); color: var(--accent); font-weight: 600; }
+
+    .sidebar-footer {
+      margin-top: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+    }
+    .user-email { font-size: 0.75rem; color: var(--muted); word-break: break-all; }
+    .active-group-label { font-size: 0.7rem; color: var(--accent); opacity: 0.7; }
+
+    .content { padding: 2rem; overflow-y: auto; }
+
+    /* ── Section & Tabs ────────────────────────────────────── */
+    .section-header {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 1.25rem;
+    }
+    .section-header h1 { font-size: 1.4rem; font-weight: 700; }
+
+    .tabs {
+      display: flex;
+      gap: 0.25rem;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 1rem;
+    }
+    .tab-btn {
+      background: transparent;
+      border: none;
+      color: var(--muted);
+      padding: 0.5rem 1rem;
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      font-size: 0.85rem;
+      transition: color 0.15s, border-color 0.15s;
+    }
+    .tab-btn:hover { color: var(--text); }
+    .tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+    /* ── Toolbar ───────────────────────────────────────────── */
+    .toolbar { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 1rem; }
+
+    /* ── Buttons ───────────────────────────────────────────── */
+    .btn {
+      padding: 0.45rem 1rem;
+      background: var(--accent);
+      color: #0f172a;
+      border: none;
+      border-radius: 0.5rem;
+      cursor: pointer;
+      font-size: 0.85rem;
+      font-weight: 600;
+      transition: opacity 0.15s;
+    }
+    .btn:hover { opacity: 0.85; }
+    .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+    .btn-secondary { background: var(--surface); color: var(--text); border: 1px solid var(--border); }
+    .btn-danger { background: var(--danger); color: #fff; }
+
+    .btn-ghost {
+      background: transparent;
+      border: none;
+      color: var(--muted);
+      cursor: pointer;
+      font-size: 0.85rem;
+      padding: 0.45rem 0.75rem;
+      border-radius: 0.5rem;
+    }
+    .btn-ghost:hover { color: var(--text); background: var(--bg); }
+    .btn-ghost.danger { color: var(--danger); }
+    .btn-ghost.danger:hover { background: var(--danger-bg); }
+
+    /* ── Table ─────────────────────────────────────────────── */
+    table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+    th {
+      text-align: left;
+      padding: 0.5rem 0.75rem;
+      color: var(--muted);
+      font-weight: 600;
+      border-bottom: 1px solid var(--border);
+      text-transform: uppercase;
+      font-size: 0.75rem;
+      letter-spacing: 0.05em;
+    }
+    td { padding: 0.55rem 0.75rem; border-bottom: 1px solid var(--border); vertical-align: middle; }
+    tr:hover td { background: rgba(255,255,255,0.02); }
+    tr.row-active td { background: rgba(56,189,248,0.04); }
+
+    /* ── Badge ─────────────────────────────────────────────── */
+    .badge {
+      display: inline-block;
+      padding: 0.2rem 0.6rem;
+      border-radius: 999px;
+      font-size: 0.7rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    .badge.ok  { background: var(--ok-bg);     color: var(--ok);     }
+    .badge.warn { background: var(--warn-bg);  color: var(--warn);   }
+    .badge.error { background: var(--danger-bg); color: var(--danger); }
+
+    .role-pill {
+      display: inline-block;
+      padding: 0.15rem 0.5rem;
+      border-radius: 999px;
+      background: #1d4ed8;
+      color: #bfdbfe;
+      font-size: 0.7rem;
+      margin: 0.1rem;
+    }
+
+    /* ── Panel ─────────────────────────────────────────────── */
+    .panel {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 0.75rem;
+      padding: 1.25rem;
+      margin-top: 1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+      max-width: 480px;
+    }
+    .panel h3 { font-size: 0.95rem; }
+    .panel input[type="text"],
+    .panel input[type="url"],
+    .panel input[type="email"],
+    .panel input[type="password"] {
+      padding: 0.5rem 0.75rem;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 0.5rem;
+      color: var(--text);
+      font-size: 0.85rem;
+      width: 100%;
+    }
+    .panel input:focus { outline: 2px solid var(--accent); border-color: transparent; }
+    .panel-actions { display: flex; gap: 0.5rem; }
+
+    .role-grid { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+    .role-grid label { display: flex; align-items: center; gap: 0.35rem; font-size: 0.85rem; cursor: pointer; }
+
+    /* ── Migration ─────────────────────────────────────────── */
+    .migration-info {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 0.75rem;
+      padding: 1rem 1.25rem;
+      margin-bottom: 1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+      font-size: 0.85rem;
+      line-height: 1.5;
+    }
+    .warn-text { color: var(--warn); }
+
+    /* ── Settings ──────────────────────────────────────────── */
+    .settings-heading {
+      font-size: 1rem;
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .form-row { display: flex; flex-direction: column; gap: 0.3rem; }
+    .form-row label { font-size: 0.8rem; color: var(--muted); }
+    .form-row input {
+      padding: 0.5rem 0.75rem;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 0.5rem;
+      color: var(--text);
+      font-size: 0.85rem;
+      width: 100%;
+    }
+    .form-row input:focus { outline: 2px solid var(--accent); border-color: transparent; }
+    .url-cell { font-size: 0.78rem; color: var(--muted); word-break: break-all; }
+
+    /* ── Dashboard ─────────────────────────────────────────── */
+    .service-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 1rem;
+      margin-top: 0.5rem;
+    }
+
+    .service-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 0.75rem;
+      padding: 1.1rem 1.25rem;
+      display: flex;
+      align-items: flex-start;
+      gap: 1rem;
+    }
+
+    .status-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      flex-shrink: 0;
+      margin-top: 3px;
+      transition: background 0.3s;
+    }
+    .status-dot.ok      { background: var(--ok);    box-shadow: 0 0 6px var(--ok); }
+    .status-dot.error   { background: var(--danger); box-shadow: 0 0 6px var(--danger); }
+    .status-dot.loading { background: var(--muted); }
+
+    .service-card-body { display: flex; flex-direction: column; gap: 0.25rem; min-width: 0; }
+    .service-card-name { font-weight: 600; font-size: 0.95rem; }
+    .service-card-url  { font-size: 0.75rem; color: var(--muted); word-break: break-all; }
+    .service-card-meta { font-size: 0.75rem; color: var(--muted); margin-top: 0.15rem; }
+
+    .refresh-select {
+      padding: 0.4rem 0.65rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 0.5rem;
+      color: var(--text);
+      font-size: 0.85rem;
+      cursor: pointer;
+    }
+
+    /* ── Misc ──────────────────────────────────────────────── */
+    .code-block {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 0.5rem;
+      padding: 1rem;
+      font-size: 0.8rem;
+      overflow-x: auto;
+      white-space: pre-wrap;
+      line-height: 1.6;
+    }
+    .hint { color: var(--muted); font-size: 0.82rem; line-height: 1.5; }
+    .error { color: var(--danger); font-size: 0.82rem; }
+    .loading-text { color: var(--muted); font-size: 0.85rem; padding: 0.5rem 0; }
+    .muted { color: var(--muted); }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script type="text/babel">
+    const { useState, useEffect } = React;
+
+    // ── LocalStorage helpers ────────────────────────────────
+
+    const DEFAULT_GROUPS = [
+      {
+        name: 'Produktion',
+        authServiceUrl: 'https://auth.freischule.info',
+        freeSchoolUrl: 'https://api.freischule.info',
+      },
+    ];
+
+    function loadGroups() {
+      try { return JSON.parse(localStorage.getItem('fs_groups')) || DEFAULT_GROUPS; } catch { return DEFAULT_GROUPS; }
+    }
+    function loadActiveGroupName(groups) {
+      const stored = localStorage.getItem('fs_active_group');
+      return (stored && groups.find(g => g.name === stored)) ? stored : groups[0].name;
+    }
+    function persistGroups(groups, activeName) {
+      localStorage.setItem('fs_groups', JSON.stringify(groups));
+      localStorage.setItem('fs_active_group', activeName);
+    }
+
+    // ── API helpers ─────────────────────────────────────────
+
+    async function authFetch(url, token, opts = {}) {
+      const isFormData = opts.body instanceof FormData;
+      const headers = { Authorization: `Bearer ${token}` };
+      if (!isFormData) headers['Content-Type'] = 'application/json';
+      return fetch(url, {
+        ...opts,
+        headers: { ...headers, ...(opts.headers || {}) },
+        body: opts.body
+          ? (isFormData ? opts.body : JSON.stringify(opts.body))
+          : undefined,
+      });
+    }
+
+    // ── Shared components ───────────────────────────────────
+
+    function Badge({ type, children }) {
+      return <span className={`badge ${type}`}>{children}</span>;
+    }
+
+    function RolePills({ roles }) {
+      if (!roles?.length) return <span className="muted">–</span>;
+      return <>{roles.map(r => <span key={r} className="role-pill">{r}</span>)}</>;
+    }
+
+    // ── Login ───────────────────────────────────────────────
+    // Flow: POST /user/login → if status==="register" → POST /user/register with repassword
+    // device_fingerprint: persistent random ID in localStorage
+
+    function getDeviceFingerprint() {
+      let fp = localStorage.getItem('fs_device_fp');
+      if (!fp) {
+        fp = crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2) + Date.now().toString(36);
+        localStorage.setItem('fs_device_fp', fp);
+      }
+      return fp;
+    }
+
+    function LoginPage({ groups, activeGroupName, onLogin, onGroupChange }) {
+      const [email, setEmail]           = useState('');
+      const [password, setPassword]     = useState('');
+      const [repassword, setRepassword] = useState('');
+      const [step, setStep]             = useState('login'); // 'login' | 'register'
+      const [loading, setLoading]       = useState(false);
+      const [error, setError]           = useState('');
+
+      const group = groups.find(g => g.name === activeGroupName) ?? groups[0];
+
+      async function handleLogin(e) {
+        e.preventDefault();
+        setLoading(true); setError('');
+        try {
+          const r = await fetch(`${group.authServiceUrl}/user/login`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, password }),
+          });
+          const d = await r.json();
+          if (!r.ok) {
+            setError(d.detail ?? d.error ?? 'Login fehlgeschlagen');
+            setLoading(false); return;
+          }
+          if (d.status === 'register' || !d.access_token) {
+            // Email unbekannt → Registrierung einleiten
+            setStep('register');
+            setLoading(false); return;
+          }
+          onLogin({ authToken: d.access_token, email, group });
+        } catch (e) { setError(e.message); }
+        setLoading(false);
+      }
+
+      async function handleRegister(e) {
+        e.preventDefault();
+        setLoading(true); setError('');
+        try {
+          const r = await fetch(`${group.authServiceUrl}/user/register`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              email,
+              repassword,
+              device_fingerprint: getDeviceFingerprint(),
+              device_name: 'AdminClient',
+            }),
+          });
+          const d = await r.json();
+          if (!r.ok) {
+            setError(d.detail ?? d.error ?? 'Registrierung fehlgeschlagen');
+            setLoading(false); return;
+          }
+          if (d.access_token) {
+            onLogin({ authToken: d.access_token, email, group });
+          } else {
+            // Registration done, now do login
+            setStep('login'); setRepassword('');
+            setError('Konto erstellt — bitte jetzt einloggen.');
+          }
+        } catch (e) { setError(e.message); }
+        setLoading(false);
+      }
+
+      return (
+        <div className="login-wrap">
+          <div className="login-card">
+            <div className="logo">Freischule <span>Admin</span></div>
+
+            {step === 'login' ? (
+              <>
+                <p className="login-sub">Melde dich mit deinem Admin-Account an</p>
+                <div>
+                  <label style={{ fontSize: '0.8rem', color: 'var(--muted)', display: 'block', marginBottom: '0.3rem' }}>
+                    Server
+                  </label>
+                  <select value={activeGroupName} onChange={e => onGroupChange(e.target.value)}>
+                    {groups.map(g => <option key={g.name} value={g.name}>{g.name}</option>)}
+                  </select>
+                </div>
+                <form onSubmit={handleLogin}>
+                  <label>E-Mail</label>
+                  <input type="email" value={email} onChange={e => setEmail(e.target.value)}
+                    placeholder="admin@freischule.info" required autoComplete="email" />
+                  <label>Passwort</label>
+                  <input type="password" value={password} onChange={e => setPassword(e.target.value)}
+                    placeholder="••••••••" required autoComplete="current-password" />
+                  <button type="submit" disabled={loading}>{loading ? '…' : 'Anmelden'}</button>
+                  {error && <p className="error">{error}</p>}
+                </form>
+              </>
+            ) : (
+              <>
+                <p className="login-sub">Neues Konto für <strong>{email}</strong></p>
+                <form onSubmit={handleRegister}>
+                  <label>Passwort bestätigen</label>
+                  <input type="password" value={repassword} onChange={e => setRepassword(e.target.value)}
+                    placeholder="••••••••" required autoComplete="new-password" />
+                  <button type="submit" disabled={loading}>{loading ? '…' : 'Konto erstellen'}</button>
+                  {error && <p className="error">{error}</p>}
+                </form>
+                <button className="btn-ghost" style={{ alignSelf: 'flex-start' }}
+                  onClick={() => { setStep('login'); setError(''); }}>
+                  ← Zurück
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+      );
+    }
+
+    // ── Dashboard Section ───────────────────────────────────
+
+    function DashboardSection({ group }) {
+      const [statuses, setStatuses]   = useState({});
+      const [checking, setChecking]   = useState(false);
+      const [lastCheck, setLastCheck] = useState(null);
+      const [interval_, setInterval_] = useState(() => {
+        return parseInt(localStorage.getItem('fs_dash_interval') ?? '10', 10);
+      });
+
+      const services = [
+        { key: 'authService', name: 'AuthService', url: group.authServiceUrl },
+        { key: 'freeSchool',  name: 'FreeSchool',  url: group.freeSchoolUrl  },
+      ];
+
+      async function checkAll() {
+        setChecking(true);
+        const results = {};
+        await Promise.all(services.map(async s => {
+          const start = Date.now();
+          try {
+            const r = await fetch(s.url + '/', { signal: AbortSignal.timeout(5000) });
+            const text = await r.text().catch(() => '');
+            results[s.key] = { ok: r.ok, httpStatus: r.status, ms: Date.now() - start, body: text.slice(0, 120) };
+          } catch (err) {
+            results[s.key] = { ok: false, ms: Date.now() - start, error: err.message };
+          }
+        }));
+        setStatuses(results);
+        setLastCheck(new Date());
+        setChecking(false);
+      }
+
+      // Initial check when group changes
+      useEffect(() => { checkAll(); }, [group.authServiceUrl, group.freeSchoolUrl]);
+
+      // Auto-refresh interval
+      useEffect(() => {
+        if (!interval_) return;
+        const id = setInterval(checkAll, interval_ * 1000);
+        return () => clearInterval(id);
+      }, [interval_, group.authServiceUrl, group.freeSchoolUrl]);
+
+      function changeInterval(val) {
+        setInterval_(val);
+        localStorage.setItem('fs_dash_interval', String(val));
+      }
+
+      return (
+        <div>
+          <div className="section-header">
+            <h1>Dashboard</h1>
+            {lastCheck && (
+              <span className="muted" style={{ fontSize: '0.8rem' }}>
+                Zuletzt geprüft: {lastCheck.toLocaleTimeString('de-DE')}
+              </span>
+            )}
+          </div>
+
+          <div className="toolbar">
+            <button className="btn" onClick={checkAll} disabled={checking}>
+              {checking ? 'Prüfe…' : 'Jetzt prüfen'}
+            </button>
+            <select
+              className="refresh-select"
+              value={interval_}
+              onChange={e => changeInterval(+e.target.value)}
+            >
+              <option value={0}>Kein Auto-Refresh</option>
+              <option value={5}>Alle 5 Sek.</option>
+              <option value={10}>Alle 10 Sek.</option>
+              <option value={30}>Alle 30 Sek.</option>
+              <option value={60}>Alle 60 Sek.</option>
+            </select>
+          </div>
+
+          <div className="service-grid">
+            {services.map(s => {
+              const st = statuses[s.key];
+              const dotClass = !st ? 'loading' : st.ok ? 'ok' : 'error';
+              return (
+                <div key={s.key} className="service-card">
+                  <div className={`status-dot ${dotClass}`} />
+                  <div className="service-card-body">
+                    <span className="service-card-name">{s.name}</span>
+                    <span className="service-card-url">{s.url}</span>
+                    {st && (
+                      <span className="service-card-meta">
+                        {st.ok
+                          ? <span style={{ color: 'var(--ok)' }}>Online</span>
+                          : <span style={{ color: 'var(--danger)' }}>Offline</span>
+                        }
+                        {' · '}{st.ms} ms
+                        {st.httpStatus && ` · HTTP ${st.httpStatus}`}
+                      </span>
+                    )}
+                    {st?.body && st.ok && (
+                      <span className="service-card-meta" style={{ fontStyle: 'italic' }}>
+                        "{st.body}"
+                      </span>
+                    )}
+                    {st?.error && (
+                      <span className="error" style={{ fontSize: '0.75rem' }}>{st.error}</span>
+                    )}
+                    {!st && <span className="service-card-meta">Prüfe…</span>}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      );
+    }
+
+    // ── AuthService Section ─────────────────────────────────
+
+    function AuthServiceSection({ authToken, group }) {
+      const [tab, setTab]         = useState('users');
+      const [users, setUsers]     = useState(null);
+      const [loading, setLoading] = useState(false);
+      const [error, setError]     = useState('');
+      const [editUser, setEditUser]   = useState(null);
+      const [rolesInput, setRolesInput] = useState('');
+      const [jwtInfo, setJwtInfo] = useState('');
+
+      useEffect(() => { if (tab === 'users') loadUsers(); }, [tab]);
+
+      async function loadUsers() {
+        setLoading(true); setError('');
+        try {
+          const r = await authFetch(`${group.authServiceUrl}/admin/users`, authToken);
+          if (!r.ok) { setError(`Fehler ${r.status}`); setLoading(false); return; }
+          const d = await r.json();
+          setUsers(d.users ?? d);
+        } catch (e) { setError(e.message); }
+        setLoading(false);
+      }
+
+      async function saveRoles() {
+        const roles = rolesInput.split(',').map(r => r.trim().toUpperCase()).filter(Boolean);
+        const r = await authFetch(`${group.authServiceUrl}/admin/set_roles`, authToken, {
+          method: 'POST',
+          body: { user_id: editUser.id, roles },
+        });
+        if (r.ok) { setEditUser(null); loadUsers(); }
+        else { const d = await r.json(); alert(d.detail ?? JSON.stringify(d)); }
+      }
+
+      async function loadJwt() {
+        const r = await authFetch(`${group.authServiceUrl}/admin/jwt/key-storage`, authToken);
+        const d = await r.json();
+        setJwtInfo(JSON.stringify(d, null, 2));
+      }
+
+      return (
+        <div>
+          <div className="section-header">
+            <h1>AuthService</h1>
+            <Badge type="ok">verbunden</Badge>
+          </div>
+
+          <div className="tabs">
+            <button className={`tab-btn ${tab === 'users' ? 'active' : ''}`} onClick={() => setTab('users')}>Benutzer</button>
+            <button className={`tab-btn ${tab === 'jwt'   ? 'active' : ''}`} onClick={() => setTab('jwt')}>JWT-Schlüssel</button>
+          </div>
+
+          {tab === 'users' && (
+            <div>
+              <div className="toolbar">
+                <button className="btn" onClick={loadUsers}>Aktualisieren</button>
+              </div>
+              {loading && <p className="loading-text">Lade Benutzer…</p>}
+              {error   && <p className="error">{error}</p>}
+              {users && (
+                <table>
+                  <thead><tr>
+                    <th>ID</th><th>E-Mail</th><th>Rollen</th><th>E-Mail bestätigt</th><th>Letzter Login</th><th></th>
+                  </tr></thead>
+                  <tbody>
+                    {users.map(u => (
+                      <tr key={u.id}>
+                        <td><code>{u.id ?? '–'}</code></td>
+                        <td>{u.email}</td>
+                        <td><RolePills roles={u.roles} /></td>
+                        <td><Badge type={u.is_email_verify ? 'ok' : 'warn'}>{u.is_email_verify ? 'ja' : 'nein'}</Badge></td>
+                        <td>{u.last_login ? new Date(u.last_login).toLocaleString('de-DE') : '–'}</td>
+                        <td>
+                          <button className="btn-ghost" onClick={() => { setEditUser(u); setRolesInput((u.roles ?? []).join(', ')); }}>
+                            Rollen
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+              {editUser && (
+                <div className="panel">
+                  <h3>Rollen bearbeiten — {editUser.email}</h3>
+                  <input type="text" value={rolesInput} onChange={e => setRolesInput(e.target.value)}
+                    placeholder="z.B. ADMIN, USER" />
+                  <div className="panel-actions">
+                    <button className="btn" onClick={saveRoles}>Speichern</button>
+                    <button className="btn-ghost" onClick={() => setEditUser(null)}>Abbrechen</button>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {tab === 'jwt' && (
+            <div>
+              <div className="toolbar">
+                <button className="btn" onClick={loadJwt}>Schlüssel-Info laden</button>
+              </div>
+              <pre className="code-block">{jwtInfo || '–'}</pre>
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    // ── FreeSchool Section ──────────────────────────────────
+
+    const FS_ROLES = ['STUDENT','TEACHER','TUTOR','PROJECTMANAGER','SCHOOLDIRECTOR','MODERATOR','ADMIN'];
+
+    function FreeSchoolSection({ authToken, group }) {
+      const [tab, setTab]           = useState('users');
+      const [users, setUsers]       = useState(null);
+      const [loading, setLoading]   = useState(false);
+      const [error, setError]       = useState('');
+      const [editUser, setEditUser] = useState(null);
+      const [selRoles, setSelRoles] = useState([]);
+
+      useEffect(() => { if (tab === 'users') loadUsers(); }, [tab]);
+
+      async function loadUsers() {
+        setLoading(true); setError('');
+        try {
+          const r = await authFetch(`${group.freeSchoolUrl}/admin/users`, authToken);
+          if (!r.ok) { setError(`Fehler ${r.status}`); setLoading(false); return; }
+          setUsers(await r.json());
+        } catch (e) { setError(e.message); }
+        setLoading(false);
+      }
+
+      function toggleRole(role) {
+        setSelRoles(prev => prev.includes(role) ? prev.filter(r => r !== role) : [...prev, role]);
+      }
+
+      async function saveRoles() {
+        const r = await authFetch(`${group.freeSchoolUrl}/admin/user/${editUser.id}/roles`, authToken, {
+          method: 'PUT',
+          body: { roles: selRoles },
+        });
+        if (r.ok) { setEditUser(null); loadUsers(); }
+        else { const d = await r.json(); alert(d.detail ?? JSON.stringify(d)); }
+      }
+
+      async function downloadBackup(type) {
+        const url = type === 'json'
+          ? `${group.freeSchoolUrl}/admin/backup/json`
+          : `${group.freeSchoolUrl}/admin/backup`;
+        const r = await fetch(url, { headers: { Authorization: `Bearer ${authToken}` } });
+        const blob = await r.blob();
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = type === 'json' ? 'backup.json' : 'backup.sql';
+        a.click();
+        setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+      }
+
+      return (
+        <div>
+          <div className="section-header">
+            <h1>FreeSchool</h1>
+            <Badge type="ok">verbunden</Badge>
+          </div>
+
+          <div className="tabs">
+            <button className={`tab-btn ${tab === 'users'  ? 'active' : ''}`} onClick={() => setTab('users')}>Benutzer</button>
+            <button className={`tab-btn ${tab === 'backup' ? 'active' : ''}`} onClick={() => setTab('backup')}>Backup</button>
+          </div>
+
+          {tab === 'users' && (
+            <div>
+              <div className="toolbar">
+                <button className="btn" onClick={loadUsers}>Aktualisieren</button>
+              </div>
+              {loading && <p className="loading-text">Lade Benutzer…</p>}
+              {error   && <p className="error">{error}</p>}
+              {users && (
+                <table>
+                  <thead><tr>
+                    <th>ID</th><th>E-Mail</th><th>Rollen</th><th>E-Mail bestätigt</th><th>Letzter Login</th><th></th>
+                  </tr></thead>
+                  <tbody>
+                    {users.map(u => (
+                      <tr key={u.id}>
+                        <td><code>{u.id ?? '–'}</code></td>
+                        <td>{u.email}</td>
+                        <td><RolePills roles={u.roles} /></td>
+                        <td><Badge type={u.email_verify ? 'ok' : 'warn'}>{u.email_verify ? 'ja' : 'nein'}</Badge></td>
+                        <td>{u.last_login ? new Date(u.last_login).toLocaleString('de-DE') : '–'}</td>
+                        <td>
+                          <button className="btn-ghost" onClick={() => { setEditUser(u); setSelRoles(u.roles ?? []); }}>
+                            Rollen
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+              {editUser && (
+                <div className="panel">
+                  <h3>Rollen bearbeiten — {editUser.email}</h3>
+                  <div className="role-grid">
+                    {FS_ROLES.map(r => (
+                      <label key={r}>
+                        <input type="checkbox" checked={selRoles.includes(r)} onChange={() => toggleRole(r)} />
+                        {r}
+                      </label>
+                    ))}
+                  </div>
+                  <div className="panel-actions">
+                    <button className="btn" onClick={saveRoles}>Speichern</button>
+                    <button className="btn-ghost" onClick={() => setEditUser(null)}>Abbrechen</button>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {tab === 'backup' && (
+            <div>
+              <div className="toolbar">
+                <button className="btn" onClick={() => downloadBackup('json')}>JSON-Backup herunterladen</button>
+                <button className="btn" onClick={() => downloadBackup('sql')}>SQL-Backup herunterladen</button>
+              </div>
+              <p className="hint">Die Backups werden direkt vom FreeSchool-Server gestreamt und als Datei gespeichert.</p>
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    // ── Migration Section ───────────────────────────────────
+
+    function mapFsUser(u) {
+      const roles = (u.roles ?? []).map(r => (typeof r === 'string' ? r : r.name));
+      return {
+        email: u.email,
+        hashed_password: u.hashed_password,
+        roles,
+        comment: u.profile?.full_name
+          ? `Migrated from FreeSchool — ${u.profile.full_name}`
+          : 'Migrated from FreeSchool',
+      };
+    }
+
+    function MigrationSection({ authToken, group }) {
+      const [preview, setPreview] = useState(null);
+      const [result, setResult]   = useState(null);
+      const [loading, setLoading] = useState(false);
+      const [error, setError]     = useState('');
+
+      async function loadPreview() {
+        setLoading(true); setError(''); setPreview(null); setResult(null);
+        try {
+          const r = await authFetch(`${group.freeSchoolUrl}/admin/export/users`, authToken);
+          if (!r.ok) { setError('FreeSchool-Export fehlgeschlagen'); setLoading(false); return; }
+          const fsUsers = await r.json();
+          const mapped  = fsUsers.map(mapFsUser);
+          setPreview({
+            count: mapped.length,
+            users: mapped,
+            warning: 'Passwort-Hashes sind inkompatibel (argon2 vs. bcrypt). Migrierte Benutzer müssen ihr Passwort zurücksetzen.',
+          });
+        } catch (e) { setError(e.message); }
+        setLoading(false);
+      }
+
+      async function runMigration() {
+        if (!confirm('Migration jetzt ausführen? Dies kann nicht rückgängig gemacht werden.')) return;
+        setLoading(true); setResult(null);
+        try {
+          const jsonBlob = new Blob([JSON.stringify(preview.users)], { type: 'application/json' });
+          const form = new FormData();
+          form.append('file', jsonBlob, 'migration.json');
+
+          const r = await authFetch(`${group.authServiceUrl}/admin/users/import`, authToken, {
+            method: 'POST',
+            body: form,
+          });
+          const d = await r.json();
+          setResult(r.ok ? { ok: true, ...d } : { ok: false, error: d.detail ?? d.error ?? JSON.stringify(d) });
+        } catch (e) { setResult({ ok: false, error: e.message }); }
+        setLoading(false);
+      }
+
+      return (
+        <div>
+          <div className="section-header">
+            <h1>Migration</h1>
+            <Badge type="warn">FreeSchool → AuthService</Badge>
+          </div>
+
+          <div className="migration-info">
+            <p>Exportiert alle Benutzer aus <strong>FreeSchool</strong> und importiert sie in den <strong>AuthService</strong>.</p>
+            <p className="warn-text">⚠ Passwort-Hashes sind inkompatibel (argon2 vs. bcrypt). Migrierte Benutzer müssen ihr Passwort zurücksetzen.</p>
+          </div>
+
+          <div className="toolbar">
+            <button className="btn" onClick={loadPreview} disabled={loading || (!authToken || !fsToken)}>
+              Vorschau laden
+            </button>
+            <button className="btn btn-danger" onClick={runMigration} disabled={!preview || loading}>
+              Migration ausführen
+            </button>
+          </div>
+
+
+          {loading && <p className="loading-text">Lädt…</p>}
+          {error   && <p className="error">{error}</p>}
+
+          {preview && !result && (
+            <div>
+              <div className="migration-info">
+                <p><strong>{preview.count}</strong> Benutzer werden migriert.</p>
+                <p className="warn-text">{preview.warning}</p>
+              </div>
+              <table>
+                <thead><tr><th>E-Mail</th><th>Rollen</th><th>Kommentar</th></tr></thead>
+                <tbody>
+                  {preview.users.slice(0, 50).map((u, i) => (
+                    <tr key={i}>
+                      <td>{u.email}</td>
+                      <td><RolePills roles={u.roles} /></td>
+                      <td><small>{u.comment}</small></td>
+                    </tr>
+                  ))}
+                  {preview.users.length > 50 && (
+                    <tr><td colSpan="3" className="muted">… und {preview.users.length - 50} weitere</td></tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          )}
+
+          {result && (
+            <div className="migration-info">
+              {result.ok ? (
+                <>
+                  <p>✓ Migration abgeschlossen</p>
+                  <p>
+                    Erstellt: <strong>{result.created ?? '?'}</strong> &nbsp;
+                    Aktualisiert: <strong>{result.updated ?? '?'}</strong> &nbsp;
+                    Übersprungen: <strong>{result.skipped ?? '?'}</strong>
+                  </p>
+                </>
+              ) : (
+                <p className="error">Fehler: {result.error}</p>
+              )}
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    // ── Settings Section ────────────────────────────────────
+
+    const FORM_LABELS = { name: 'Name', authServiceUrl: 'AuthService URL', freeSchoolUrl: 'FreeSchool URL' };
+    const FORM_PLACEHOLDERS = { name: 'z.B. Staging', authServiceUrl: 'https://auth.example.com', freeSchoolUrl: 'https://api.example.com' };
+    const EMPTY_FORM = { name: '', authServiceUrl: '', freeSchoolUrl: '' };
+
+    function SettingsSection({ groups, activeGroupName, onGroupsChange }) {
+      const [form, setForm]       = useState(EMPTY_FORM);
+      const [editing, setEditing] = useState(null);
+      const [formError, setFormError] = useState('');
+
+      function startEdit(g) {
+        setEditing(g.name);
+        setForm({ name: g.name, authServiceUrl: g.authServiceUrl, freeSchoolUrl: g.freeSchoolUrl });
+        setFormError('');
+      }
+      function resetForm() { setEditing(null); setForm(EMPTY_FORM); setFormError(''); }
+
+      function saveGroup() {
+        const { name, authServiceUrl, freeSchoolUrl } = form;
+        if (!name.trim() || !authServiceUrl.trim() || !freeSchoolUrl.trim()) {
+          setFormError('Alle Felder sind erforderlich.'); return;
+        }
+        const g = { name: name.trim(), authServiceUrl: authServiceUrl.trim(), freeSchoolUrl: freeSchoolUrl.trim() };
+        const updated = editing ? groups.map(x => x.name === editing ? g : x) : [...groups, g];
+        const newActive = editing === activeGroupName ? g.name : activeGroupName;
+        onGroupsChange(updated, newActive);
+        resetForm();
+      }
+
+      function deleteGroup(name) {
+        if (!confirm(`Gruppe "${name}" wirklich löschen?`)) return;
+        const updated = groups.filter(g => g.name !== name);
+        onGroupsChange(updated, updated[0].name);
+      }
+
+      return (
+        <div>
+          <div className="section-header"><h1>Einstellungen</h1></div>
+
+          <h2 className="settings-heading">Servergruppen</h2>
+          <p className="hint" style={{ marginBottom: '1rem' }}>
+            Jede Gruppe enthält die URLs für AuthService und FreeSchool.
+            Die aktive Gruppe wird beim Login und für alle API-Anfragen verwendet.
+          </p>
+
+          <table>
+            <thead><tr>
+              <th>Status</th><th>Name</th><th>AuthService URL</th><th>FreeSchool URL</th><th></th>
+            </tr></thead>
+            <tbody>
+              {groups.map(g => (
+                <tr key={g.name} className={g.name === activeGroupName ? 'row-active' : ''}>
+                  <td>
+                    {g.name === activeGroupName
+                      ? <Badge type="ok">aktiv</Badge>
+                      : <button className="btn-ghost" onClick={() => onGroupsChange(groups, g.name)}>Aktivieren</button>}
+                  </td>
+                  <td><strong>{g.name}</strong></td>
+                  <td><code className="url-cell">{g.authServiceUrl}</code></td>
+                  <td><code className="url-cell">{g.freeSchoolUrl}</code></td>
+                  <td style={{ whiteSpace: 'nowrap' }}>
+                    <button className="btn-ghost" onClick={() => startEdit(g)}>Bearbeiten</button>
+                    {g.name !== activeGroupName && groups.length > 1 && (
+                      <button className="btn-ghost danger" onClick={() => deleteGroup(g.name)}>Löschen</button>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+
+          <div className="panel" style={{ marginTop: '1.5rem', maxWidth: '520px' }}>
+            <h3>{editing ? `Bearbeiten: ${editing}` : 'Neue Gruppe'}</h3>
+            {Object.keys(EMPTY_FORM).map(field => (
+              <div key={field} className="form-row">
+                <label>{FORM_LABELS[field]}</label>
+                <input
+                  type={field === 'name' ? 'text' : 'url'}
+                  value={form[field]}
+                  onChange={e => setForm(f => ({ ...f, [field]: e.target.value }))}
+                  placeholder={FORM_PLACEHOLDERS[field]}
+                />
+              </div>
+            ))}
+            {formError && <p className="error">{formError}</p>}
+            <div className="panel-actions">
+              <button className="btn" onClick={saveGroup}>Speichern</button>
+              {editing && <button className="btn-ghost" onClick={resetForm}>Abbrechen</button>}
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // ── Dashboard ───────────────────────────────────────────
+
+    const NAV = [
+      { id: 'dashboard',    label: 'Dashboard'     },
+      { id: 'auth-service', label: 'AuthService'   },
+      { id: 'freeschool',   label: 'FreeSchool'    },
+      { id: 'migration',    label: 'Migration'     },
+      { id: 'settings',     label: 'Einstellungen' },
+    ];
+
+    function Dashboard({ auth, groups, activeGroupName, onLogout, onGroupsChange }) {
+      const [section, setSection] = useState('dashboard');
+      const { authToken, email, group } = auth;
+
+      return (
+        <div className="dashboard">
+          <aside className="sidebar">
+            <div className="logo">Freischule <span>Admin</span></div>
+            <nav>
+              {NAV.map(n => (
+                <button
+                  key={n.id}
+                  className={`nav-btn ${section === n.id ? 'active' : ''}`}
+                  onClick={() => setSection(n.id)}
+                >
+                  {n.label}
+                </button>
+              ))}
+            </nav>
+            <div className="sidebar-footer">
+              <span className="user-email">{email}</span>
+              <span className="active-group-label">{group.name}</span>
+              <button className="btn-ghost" onClick={onLogout}>Abmelden</button>
+            </div>
+          </aside>
+
+          <main className="content">
+            {section === 'dashboard'    && <DashboardSection group={group} />}
+            {section === 'auth-service' && (
+              <AuthServiceSection authToken={authToken} group={group} />
+            )}
+            {section === 'freeschool' && (
+              <FreeSchoolSection authToken={authToken} group={group} />
+            )}
+            {section === 'migration' && (
+              <MigrationSection authToken={authToken} group={group} />
+            )}
+            {section === 'settings' && (
+              <SettingsSection
+                groups={groups}
+                activeGroupName={activeGroupName}
+                onGroupsChange={onGroupsChange}
+              />
+            )}
+          </main>
+        </div>
+      );
+    }
+
+    // ── App ─────────────────────────────────────────────────
+
+    function App() {
+      const [groups, setGroups]               = useState(loadGroups);
+      const [activeGroupName, setActiveGroupName] = useState(() => loadActiveGroupName(loadGroups()));
+      const [auth, setAuth]                   = useState(null);
+
+      function handleGroupsChange(newGroups, newActive) {
+        setGroups(newGroups);
+        setActiveGroupName(newActive);
+        persistGroups(newGroups, newActive);
+      }
+
+      function handleLogin(loginData) {
+        // loginData: { authToken, email, group }  (kein fsToken mehr)
+        setAuth(loginData);
+      }
+
+      function handleLogout() {
+        setAuth(null);
+      }
+
+      if (!auth) {
+        return (
+          <LoginPage
+            groups={groups}
+            activeGroupName={activeGroupName}
+            onLogin={handleLogin}
+            onGroupChange={name => {
+              setActiveGroupName(name);
+              localStorage.setItem('fs_active_group', name);
+            }}
+          />
+        );
+      }
+
+      return (
+        <Dashboard
+          auth={auth}
+          groups={groups}
+          activeGroupName={activeGroupName}
+          onLogout={handleLogout}
+          onGroupsChange={handleGroupsChange}
+        />
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+  </script>
+</body>
+</html>

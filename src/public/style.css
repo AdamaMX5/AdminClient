@@ -320,3 +320,47 @@ tr:hover td { background: rgba(255,255,255,0.02); }
 .hidden { display: none !important; }
 
 .loading-text { color: var(--muted); font-size: 0.85rem; padding: 0.5rem 0; }
+
+/* ── Settings ──────────────────────────────────────────────── */
+.settings-heading {
+  font-size: 1rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.form-row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.form-row label {
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+.form-row input {
+  padding: 0.5rem 0.75rem;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  color: var(--text);
+  font-size: 0.85rem;
+  width: 100%;
+}
+
+.form-row input:focus { outline: 2px solid var(--accent); border-color: transparent; }
+
+.url-cell {
+  font-size: 0.78rem;
+  color: var(--muted);
+  word-break: break-all;
+}
+
+.row-active td { background: rgba(56, 189, 248, 0.04); }
+
+.danger-ghost { color: var(--danger) !important; }
+.danger-ghost:hover { background: var(--danger-bg) !important; }

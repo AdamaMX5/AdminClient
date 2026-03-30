@@ -7,6 +7,7 @@ import loginRouter from './routes/loginRouter';
 import authServiceRouter from './routes/authServiceRouter';
 import freeSchoolRouter from './routes/freeSchoolRouter';
 import migrationRouter from './routes/migrationRouter';
+import configRouter from './routes/configRouter';
 
 const app = express();
 const PORT = process.env.PORT ?? 3000;
@@ -38,6 +39,7 @@ app.use('/api', loginRouter);
 app.use('/api/auth-service', authServiceRouter);
 app.use('/api/freeschool', freeSchoolRouter);
 app.use('/api/migration', migrationRouter);
+app.use('/api/config', configRouter);
 
 // ---------------------------------------------------------------------------
 // Static Frontend

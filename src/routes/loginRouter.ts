@@ -1,4 +1,5 @@
 import { Router, Request, Response } from 'express';
+import { getActiveGroup } from '../lib/configStore';
 
 const router = Router();
 
@@ -17,8 +18,7 @@ router.post('/', async (req: Request, res: Response): Promise<void> => {
     return;
   }
 
-  const authServiceUrl = process.env.AUTH_SERVICE_URL;
-  const freeSchoolUrl = process.env.FREESCHOOL_URL;
+  const { authServiceUrl, freeSchoolUrl } = getActiveGroup();
 
   let authOk = false;
   let freeSchoolOk = false;
