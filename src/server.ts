@@ -8,6 +8,9 @@ import authServiceRouter from './routes/authServiceRouter';
 import freeSchoolRouter from './routes/freeSchoolRouter';
 import migrationRouter from './routes/migrationRouter';
 import configRouter from './routes/configRouter';
+import servicesRouter from './routes/servicesRouter';
+import monitorRouter from './routes/monitorRouter';
+import { watchdog } from './lib/watchdog';
 
 const app = express();
 const PORT = process.env.PORT ?? 3000;
@@ -40,6 +43,8 @@ app.use('/api/auth-service', authServiceRouter);
 app.use('/api/freeschool', freeSchoolRouter);
 app.use('/api/migration', migrationRouter);
 app.use('/api/config', configRouter);
+app.use('/api/services', servicesRouter);
+app.use('/api/monitor', monitorRouter);
 
 // ---------------------------------------------------------------------------
 // Static Frontend
@@ -57,4 +62,6 @@ app.get(/^(?!\/api).*/, (_req, res) => {
 
 app.listen(PORT, () => {
   console.log(`Admin Client running on port ${PORT}`);
+  watchdog.start(10_000);
+  console.log('[Watchdog] Service-Monitor gestartet (Intervall: 10 s)');
 });
