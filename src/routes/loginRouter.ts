@@ -10,7 +10,7 @@ const router = Router();
  * Attempts login against AuthService and FreeSchool in parallel.
  * Stores tokens in session. Returns which services succeeded.
  */
-router.post('/', async (req: Request, res: Response): Promise<void> => {
+router.post('/login', async (req: Request, res: Response): Promise<void> => {
   const { email, password } = req.body as { email?: string; password?: string };
 
   if (!email || !password) {
@@ -19,6 +19,14 @@ router.post('/', async (req: Request, res: Response): Promise<void> => {
   }
 
   const { authServiceUrl, freeSchoolUrl } = getActiveGroup();
+
+  // Simple device fingerprint derived from the incoming request (server-side proxy)
+  const ip = (req.headers['x-forwarded-for'] as string | undefined)?.split(',')[0]?.trim()
+    ?? req.socket.remoteAddress
+    ?? 'unknown';
+  const ua = req.headers['user-agent'] ?? 'unknown';
+  const device_fingerprint = Buffer.from(`${ip}|${ua}`).toString('base64').slice(0, 32);
+  const device_name = 'AdminClient';
 
   let authOk = false;
   let freeSchoolOk = false;
@@ -29,7 +37,7 @@ router.post('/', async (req: Request, res: Response): Promise<void> => {
       const r = await fetch(`${authServiceUrl}/user/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ email, password, device_fingerprint, device_name }),
       });
 
       if (r.ok) {
