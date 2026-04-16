@@ -31,23 +31,21 @@
     <div id="profile-dropdown-content"></div>
   </div>
 
-  <!-- ── Login Modal ──────────────────────────────────────────── -->
-  <div class="modal-overlay hidden" id="login-modal">
-    <div class="modal-card">
-      <div class="modal-header">
-        <h2>Anmelden</h2>
-        <button class="modal-close" id="login-modal-close">✕</button>
-      </div>
-      <form id="login-form">
-        <label for="login-email">E-Mail</label>
-        <input id="login-email" type="email" autocomplete="email" required placeholder="admin@freischule.info" />
-        <label for="login-password">Passwort</label>
-        <input id="login-password" type="password" autocomplete="current-password" required placeholder="••••••••" />
-        <button type="submit" id="login-btn" class="btn">Anmelden</button>
-        <p id="login-error" class="error hidden"></p>
-      </form>
-      <div id="login-service-status" class="service-status hidden"></div>
+  <!-- ── Login Popup (top-right corner) ──────────────────────── -->
+  <div class="login-popup hidden" id="login-modal">
+    <div class="login-popup-header">
+      <span class="login-popup-title">Anmelden</span>
+      <button class="modal-close" id="login-modal-close">✕</button>
     </div>
+    <form id="login-form">
+      <label for="login-email">E-Mail</label>
+      <input id="login-email" type="email" autocomplete="email" required placeholder="admin@freischule.info" />
+      <label for="login-password">Passwort</label>
+      <input id="login-password" type="password" autocomplete="current-password" required placeholder="••••••••" />
+      <button type="submit" id="login-btn" class="btn" style="width:100%;margin-top:0.25rem">Anmelden</button>
+      <p id="login-error" class="error hidden"></p>
+    </form>
+    <div id="login-service-status" class="service-status hidden"></div>
   </div>
 
   <!-- ── Main Content ──────────────────────────────────────────── -->
@@ -169,11 +167,16 @@
         <div class="form-row"><label>AuthService URL</label><input id="gf-auth-url" type="url" placeholder="https://auth.example.com" /></div>
         <div class="form-row"><label>FreeSchool URL</label><input id="gf-fs-url" type="url" placeholder="https://api.example.com" /></div>
         <p class="hint" style="margin-top:0.25rem">Optionale Services</p>
-        <div class="form-row"><label>Office URL</label><input id="gf-office-url" type="url" placeholder="https://office.example.com" /></div>
-        <div class="form-row"><label>Presence URL</label><input id="gf-presence-url" type="url" placeholder="https://presence.example.com" /></div>
+        <div class="form-row"><label>ProfileService URL</label><input id="gf-profile-url" type="url" placeholder="https://profile.example.com" /></div>
+        <div class="form-row"><label>EmailService URL</label><input id="gf-email-url" type="url" placeholder="https://email.example.com" /></div>
+        <div class="form-row"><label>ExceptionService URL</label><input id="gf-exception-url" type="url" placeholder="https://exception.example.com" /></div>
+        <div class="form-row"><label>ObjectService URL</label><input id="gf-object-url" type="url" placeholder="https://object.example.com" /></div>
+        <div class="form-row"><label>MessageService URL</label><input id="gf-message-url" type="url" placeholder="https://message.example.com" /></div>
+        <div class="form-row"><label>MediaService URL</label><input id="gf-media-url" type="url" placeholder="https://media.example.com" /></div>
+        <div class="form-row"><label>VirtualOffice URL</label><input id="gf-office-url" type="url" placeholder="https://office.example.com" /></div>
+        <div class="form-row"><label>PresenceService URL</label><input id="gf-presence-url" type="url" placeholder="https://presence.example.com" /></div>
         <div class="form-row"><label>LiveKit URL</label><input id="gf-live-url" type="url" placeholder="https://live.example.com" /></div>
-        <div class="form-row"><label>Record URL</label><input id="gf-record-url" type="url" placeholder="https://record.example.com" /></div>
-        <div class="form-row"><label>Profile URL</label><input id="gf-profile-url" type="url" placeholder="https://profile.example.com" /></div>
+        <div class="form-row"><label>RecordingService URL</label><input id="gf-recording-url" type="url" placeholder="https://record.example.com" /></div>
         <div class="form-row"><label>Matrix URL</label><input id="gf-matrix-url" type="url" placeholder="https://matrix.example.com" /></div>
         <div class="panel-actions">
           <button class="btn" onclick="saveGroup()">Speichern</button>

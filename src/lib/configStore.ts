@@ -5,6 +5,17 @@ export interface ServerGroup {
   name: string;
   authServiceUrl: string;
   freeSchoolUrl: string;
+  profileUrl?: string;
+  emailServiceUrl?: string;
+  exceptionServiceUrl?: string;
+  objectServiceUrl?: string;
+  messageServiceUrl?: string;
+  mediaServiceUrl?: string;
+  officeUrl?: string;
+  presenceUrl?: string;
+  liveUrl?: string;
+  recordingUrl?: string;
+  matrixUrl?: string;
 }
 
 interface ConfigData {

@@ -162,9 +162,13 @@ function closeProfileDropdown() {
 function setupLoginModal() {
   document.getElementById('login-modal-close').addEventListener('click', closeLoginModal);
 
-  // Close on backdrop click
-  document.getElementById('login-modal').addEventListener('click', e => {
-    if (e.target === document.getElementById('login-modal')) closeLoginModal();
+  // Close on outside click
+  document.addEventListener('click', e => {
+    const popup = document.getElementById('login-modal');
+    const btn   = document.getElementById('profile-btn');
+    if (!popup.classList.contains('hidden') && !popup.contains(e.target) && e.target !== btn) {
+      closeLoginModal();
+    }
   });
 
   document.getElementById('login-form').addEventListener('submit', async e => {
@@ -498,14 +502,19 @@ async function runMigration() {
 // ── Services — Health ─────────────────────────────────────────
 
 const SERVICE_ICONS = {
-  authServiceUrl: '🔐',
-  freeSchoolUrl:  '🏫',
-  officeUrl:      '📄',
-  presenceUrl:    '📡',
-  liveUrl:        '🎥',
-  recordUrl:      '🎙️',
-  profileUrl:     '👤',
-  matrixUrl:      '💬',
+  authServiceUrl:      '🔐',
+  freeSchoolUrl:       '🏫',
+  profileUrl:          '👤',
+  emailServiceUrl:     '📧',
+  exceptionServiceUrl: '🚨',
+  objectServiceUrl:    '📦',
+  messageServiceUrl:   '✉️',
+  mediaServiceUrl:     '🖼️',
+  officeUrl:           '📄',
+  presenceUrl:         '📡',
+  liveUrl:             '🎥',
+  recordingUrl:        '🎙️',
+  matrixUrl:           '🔷',
 };
 
 async function loadServiceHealth() {
@@ -559,7 +568,11 @@ async function loadSettings() {
   renderServerGroups(cfg.groups, cfg.activeGroup);
 }
 
-const EXTRA_SERVICE_KEYS = ['officeUrl', 'presenceUrl', 'liveUrl', 'recordUrl', 'profileUrl', 'matrixUrl'];
+const EXTRA_SERVICE_KEYS = [
+  'profileUrl', 'emailServiceUrl', 'exceptionServiceUrl', 'objectServiceUrl',
+  'messageServiceUrl', 'mediaServiceUrl', 'officeUrl', 'presenceUrl',
+  'liveUrl', 'recordingUrl', 'matrixUrl',
+];
 function countExtraServices(g) { return EXTRA_SERVICE_KEYS.filter(k => g[k]).length; }
 
 function renderServerGroups(groups, activeGroup) {
@@ -617,15 +630,20 @@ function editGroup(name) {
     if (!g) return;
     editingGroupName = name;
     document.getElementById('group-form-title').textContent = `Gruppe bearbeiten: ${name}`;
-    document.getElementById('gf-name').value         = g.name;
-    document.getElementById('gf-auth-url').value     = g.authServiceUrl;
-    document.getElementById('gf-fs-url').value       = g.freeSchoolUrl;
-    document.getElementById('gf-office-url').value   = g.officeUrl    ?? '';
-    document.getElementById('gf-presence-url').value = g.presenceUrl  ?? '';
-    document.getElementById('gf-live-url').value     = g.liveUrl      ?? '';
-    document.getElementById('gf-record-url').value   = g.recordUrl    ?? '';
-    document.getElementById('gf-profile-url').value  = g.profileUrl   ?? '';
-    document.getElementById('gf-matrix-url').value   = g.matrixUrl    ?? '';
+    document.getElementById('gf-name').value          = g.name;
+    document.getElementById('gf-auth-url').value      = g.authServiceUrl;
+    document.getElementById('gf-fs-url').value        = g.freeSchoolUrl;
+    document.getElementById('gf-profile-url').value   = g.profileUrl        ?? '';
+    document.getElementById('gf-email-url').value     = g.emailServiceUrl   ?? '';
+    document.getElementById('gf-exception-url').value = g.exceptionServiceUrl ?? '';
+    document.getElementById('gf-object-url').value    = g.objectServiceUrl  ?? '';
+    document.getElementById('gf-message-url').value   = g.messageServiceUrl ?? '';
+    document.getElementById('gf-media-url').value     = g.mediaServiceUrl   ?? '';
+    document.getElementById('gf-office-url').value    = g.officeUrl         ?? '';
+    document.getElementById('gf-presence-url').value  = g.presenceUrl       ?? '';
+    document.getElementById('gf-live-url').value      = g.liveUrl           ?? '';
+    document.getElementById('gf-recording-url').value = g.recordingUrl      ?? '';
+    document.getElementById('gf-matrix-url').value    = g.matrixUrl         ?? '';
     document.getElementById('group-form-error').classList.add('hidden');
     document.getElementById('group-form-panel').scrollIntoView({ behavior: 'smooth' });
   });
@@ -634,23 +652,29 @@ function editGroup(name) {
 function resetGroupForm() {
   editingGroupName = null;
   document.getElementById('group-form-title').textContent = 'Neue Gruppe';
-  ['gf-name','gf-auth-url','gf-fs-url','gf-office-url','gf-presence-url',
-   'gf-live-url','gf-record-url','gf-profile-url','gf-matrix-url']
+  ['gf-name','gf-auth-url','gf-fs-url','gf-profile-url','gf-email-url',
+   'gf-exception-url','gf-object-url','gf-message-url','gf-media-url',
+   'gf-office-url','gf-presence-url','gf-live-url','gf-recording-url','gf-matrix-url']
     .forEach(id => { document.getElementById(id).value = ''; });
   document.getElementById('group-form-error').classList.add('hidden');
 }
 
 async function saveGroup() {
-  const name          = document.getElementById('gf-name').value.trim();
-  const authServiceUrl= document.getElementById('gf-auth-url').value.trim();
-  const freeSchoolUrl = document.getElementById('gf-fs-url').value.trim();
-  const officeUrl     = document.getElementById('gf-office-url').value.trim();
-  const presenceUrl   = document.getElementById('gf-presence-url').value.trim();
-  const liveUrl       = document.getElementById('gf-live-url').value.trim();
-  const recordUrl     = document.getElementById('gf-record-url').value.trim();
-  const profileUrl    = document.getElementById('gf-profile-url').value.trim();
-  const matrixUrl     = document.getElementById('gf-matrix-url').value.trim();
-  const errEl         = document.getElementById('group-form-error');
+  const name               = document.getElementById('gf-name').value.trim();
+  const authServiceUrl     = document.getElementById('gf-auth-url').value.trim();
+  const freeSchoolUrl      = document.getElementById('gf-fs-url').value.trim();
+  const profileUrl         = document.getElementById('gf-profile-url').value.trim();
+  const emailServiceUrl    = document.getElementById('gf-email-url').value.trim();
+  const exceptionServiceUrl= document.getElementById('gf-exception-url').value.trim();
+  const objectServiceUrl   = document.getElementById('gf-object-url').value.trim();
+  const messageServiceUrl  = document.getElementById('gf-message-url').value.trim();
+  const mediaServiceUrl    = document.getElementById('gf-media-url').value.trim();
+  const officeUrl          = document.getElementById('gf-office-url').value.trim();
+  const presenceUrl        = document.getElementById('gf-presence-url').value.trim();
+  const liveUrl            = document.getElementById('gf-live-url').value.trim();
+  const recordingUrl       = document.getElementById('gf-recording-url').value.trim();
+  const matrixUrl          = document.getElementById('gf-matrix-url').value.trim();
+  const errEl              = document.getElementById('group-form-error');
 
   if (!name || !authServiceUrl || !freeSchoolUrl) {
     errEl.textContent = 'Name, AuthService URL und FreeSchool URL sind erforderlich.';
@@ -661,7 +685,12 @@ async function saveGroup() {
   const res = await apiFetch('/api/config/groups', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ name, authServiceUrl, freeSchoolUrl, officeUrl, presenceUrl, liveUrl, recordUrl, profileUrl, matrixUrl }),
+    body: JSON.stringify({
+      name, authServiceUrl, freeSchoolUrl,
+      profileUrl, emailServiceUrl, exceptionServiceUrl,
+      objectServiceUrl, messageServiceUrl, mediaServiceUrl,
+      officeUrl, presenceUrl, liveUrl, recordingUrl, matrixUrl,
+    }),
   });
 
   if (res.ok) { resetGroupForm(); loadSettings(); }

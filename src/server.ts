@@ -8,7 +8,7 @@ import authServiceRouter from './routes/authServiceRouter';
 import freeSchoolRouter from './routes/freeSchoolRouter';
 import migrationRouter from './routes/migrationRouter';
 import configRouter from './routes/configRouter';
-import servicesRouter from './routes/servicesRouter';
+import servicesRouter, { performHealthCheck } from './routes/servicesRouter';
 import monitorRouter from './routes/monitorRouter';
 import { watchdog } from './lib/watchdog';
 
@@ -36,6 +36,16 @@ app.use(
 
 // ---------------------------------------------------------------------------
 // API Routes
+// ---------------------------------------------------------------------------
+
+// ---------------------------------------------------------------------------
+// Public Health Endpoint (no auth required)
+// ---------------------------------------------------------------------------
+
+app.get('/health', async (_req, res) => {
+  res.json(await performHealthCheck());
+});
+
 // ---------------------------------------------------------------------------
 
 app.use('/api', loginRouter);
