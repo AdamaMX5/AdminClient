@@ -7,35 +7,74 @@
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <aside class="sidebar">
-    <div class="logo">Freischule <span>Admin</span></div>
-    <nav>
-      <button class="nav-btn active" data-section="auth-service">AuthService</button>
-      <button class="nav-btn" data-section="freeschool">FreeSchool</button>
-      <button class="nav-btn" data-section="migration">Migration</button>
-      <button class="nav-btn" data-section="settings">Einstellungen</button>
-    </nav>
-    <div class="sidebar-footer">
-      <span id="user-email" class="user-email"></span>
-      <button id="logout-btn" class="btn-ghost">Abmelden</button>
-    </div>
-  </aside>
 
+  <!-- ── Top Navigation ──────────────────────────────────────── -->
+  <header class="topnav">
+    <div class="topnav-logo">Freischule <span>Admin</span></div>
+    <nav class="topnav-nav" id="topnav-nav">
+      <button class="nav-btn active" data-section="services">Services</button>
+      <button class="nav-btn hidden" data-section="auth-service" data-auth>AuthService</button>
+      <button class="nav-btn hidden" data-section="freeschool"   data-auth>FreeSchool</button>
+      <button class="nav-btn hidden" data-section="migration"    data-auth>Migration</button>
+      <button class="nav-btn hidden" data-section="settings"     data-auth>Einstellungen</button>
+    </nav>
+    <button class="profile-btn" id="profile-btn" title="Profil / Anmelden">
+      <svg viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+        <path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z"/>
+      </svg>
+      <span class="profile-initials" id="profile-initials"></span>
+    </button>
+  </header>
+
+  <!-- ── Profile Dropdown ─────────────────────────────────────── -->
+  <div class="profile-dropdown hidden" id="profile-dropdown">
+    <div id="profile-dropdown-content"></div>
+  </div>
+
+  <!-- ── Login Modal ──────────────────────────────────────────── -->
+  <div class="modal-overlay hidden" id="login-modal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h2>Anmelden</h2>
+        <button class="modal-close" id="login-modal-close">✕</button>
+      </div>
+      <form id="login-form">
+        <label for="login-email">E-Mail</label>
+        <input id="login-email" type="email" autocomplete="email" required placeholder="admin@freischule.info" />
+        <label for="login-password">Passwort</label>
+        <input id="login-password" type="password" autocomplete="current-password" required placeholder="••••••••" />
+        <button type="submit" id="login-btn" class="btn">Anmelden</button>
+        <p id="login-error" class="error hidden"></p>
+      </form>
+      <div id="login-service-status" class="service-status hidden"></div>
+    </div>
+  </div>
+
+  <!-- ── Main Content ──────────────────────────────────────────── -->
   <main class="content">
 
+    <!-- ── Services ───────────────────────────────────────────── -->
+    <section id="section-services" class="section active">
+      <div class="section-header">
+        <h1>Services</h1>
+        <span id="services-group-name" class="badge" style="margin-left:0.5rem"></span>
+        <button class="btn btn-secondary" style="margin-left:auto" onclick="loadServiceHealth()">Alle prüfen</button>
+      </div>
+      <div id="services-grid" class="services-grid">
+        <p class="loading-text">Klicke „Alle prüfen" um den Status abzurufen.</p>
+      </div>
+    </section>
+
     <!-- ── AuthService ─────────────────────────────────────────── -->
-    <section id="section-auth-service" class="section active">
+    <section id="section-auth-service" class="section">
       <div class="section-header">
         <h1>AuthService</h1>
         <span id="auth-service-badge" class="badge"></span>
       </div>
-
       <div class="tabs">
         <button class="tab-btn active" data-tab="as-users">Benutzer</button>
         <button class="tab-btn" data-tab="as-jwt">JWT-Schlüssel</button>
       </div>
-
-      <!-- Users tab -->
       <div id="tab-as-users" class="tab-content active">
         <div class="toolbar">
           <button class="btn" onclick="loadAuthUsers()">Aktualisieren</button>
@@ -45,8 +84,6 @@
           </label>
         </div>
         <div id="auth-users-table"></div>
-
-        <!-- Edit roles panel -->
         <div id="auth-role-panel" class="panel hidden">
           <h3>Rollen bearbeiten — <span id="auth-role-user-email"></span></h3>
           <input id="auth-role-input" type="text" placeholder='z.B. ADMIN, USER' />
@@ -56,8 +93,6 @@
           </div>
         </div>
       </div>
-
-      <!-- JWT tab -->
       <div id="tab-as-jwt" class="tab-content">
         <div class="toolbar">
           <button class="btn" onclick="loadJwtKeyStorage()">Schlüssel-Info laden</button>
@@ -72,20 +107,15 @@
         <h1>FreeSchool</h1>
         <span id="freeschool-badge" class="badge"></span>
       </div>
-
       <div class="tabs">
         <button class="tab-btn active" data-tab="fs-users">Benutzer</button>
         <button class="tab-btn" data-tab="fs-backup">Backup</button>
       </div>
-
-      <!-- Users tab -->
       <div id="tab-fs-users" class="tab-content active">
         <div class="toolbar">
           <button class="btn" onclick="loadFsUsers()">Aktualisieren</button>
         </div>
         <div id="fs-users-table"></div>
-
-        <!-- Edit roles panel -->
         <div id="fs-role-panel" class="panel hidden">
           <h3>Rollen bearbeiten — <span id="fs-role-user-email"></span></h3>
           <div id="fs-role-checkboxes" class="role-grid"></div>
@@ -95,8 +125,6 @@
           </div>
         </div>
       </div>
-
-      <!-- Backup tab -->
       <div id="tab-fs-backup" class="tab-content">
         <div class="toolbar">
           <button class="btn" onclick="downloadFsBackupJson()">JSON-Backup herunterladen</button>
@@ -112,50 +140,41 @@
         <h1>Migration</h1>
         <span class="badge warn">FreeSchool → AuthService</span>
       </div>
-
       <div class="migration-info">
         <p>Exportiert alle Benutzer aus <strong>FreeSchool</strong> und importiert sie in den <strong>AuthService</strong>.</p>
         <p class="warn-text">⚠ Passwort-Hashes sind inkompatibel (argon2 vs. bcrypt). Migrierte Benutzer müssen ihr Passwort zurücksetzen.</p>
       </div>
-
       <div class="toolbar">
         <button class="btn" onclick="previewMigration()">Vorschau laden</button>
         <button class="btn btn-danger" id="run-migration-btn" onclick="runMigration()" disabled>Migration ausführen</button>
       </div>
-
       <div id="migration-preview"></div>
       <div id="migration-result"></div>
     </section>
 
-    <!-- ── Einstellungen ───────────────────────────────────────── -->
+    <!-- ── Einstellungen ──────────────────────────────────────── -->
     <section id="section-settings" class="section">
       <div class="section-header">
         <h1>Einstellungen</h1>
       </div>
-
       <h2 class="settings-heading">Servergruppen</h2>
       <p class="hint" style="margin-bottom:1rem">
         Jede Gruppe enthält die URLs für AuthService und FreeSchool.
         Die aktive Gruppe wird für alle API-Anfragen verwendet.
       </p>
-
       <div id="server-groups-list"></div>
-
-      <!-- Add / Edit form -->
       <div class="panel" id="group-form-panel" style="margin-top:1.5rem;max-width:520px">
         <h3 id="group-form-title">Neue Gruppe</h3>
-        <div class="form-row">
-          <label>Name</label>
-          <input id="gf-name" type="text" placeholder="z.B. Produktion" />
-        </div>
-        <div class="form-row">
-          <label>AuthService URL</label>
-          <input id="gf-auth-url" type="url" placeholder="https://auth.example.com" />
-        </div>
-        <div class="form-row">
-          <label>FreeSchool URL</label>
-          <input id="gf-fs-url" type="url" placeholder="https://api.example.com" />
-        </div>
+        <div class="form-row"><label>Name</label><input id="gf-name" type="text" placeholder="z.B. Produktion" /></div>
+        <div class="form-row"><label>AuthService URL</label><input id="gf-auth-url" type="url" placeholder="https://auth.example.com" /></div>
+        <div class="form-row"><label>FreeSchool URL</label><input id="gf-fs-url" type="url" placeholder="https://api.example.com" /></div>
+        <p class="hint" style="margin-top:0.25rem">Optionale Services</p>
+        <div class="form-row"><label>Office URL</label><input id="gf-office-url" type="url" placeholder="https://office.example.com" /></div>
+        <div class="form-row"><label>Presence URL</label><input id="gf-presence-url" type="url" placeholder="https://presence.example.com" /></div>
+        <div class="form-row"><label>LiveKit URL</label><input id="gf-live-url" type="url" placeholder="https://live.example.com" /></div>
+        <div class="form-row"><label>Record URL</label><input id="gf-record-url" type="url" placeholder="https://record.example.com" /></div>
+        <div class="form-row"><label>Profile URL</label><input id="gf-profile-url" type="url" placeholder="https://profile.example.com" /></div>
+        <div class="form-row"><label>Matrix URL</label><input id="gf-matrix-url" type="url" placeholder="https://matrix.example.com" /></div>
         <div class="panel-actions">
           <button class="btn" onclick="saveGroup()">Speichern</button>
           <button class="btn-ghost" onclick="resetGroupForm()">Abbrechen</button>

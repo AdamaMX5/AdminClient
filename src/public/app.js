@@ -1,28 +1,95 @@
-// ── Bootstrap ────────────────────────────────────────────────
+// ── State ─────────────────────────────────────────────────────
 
+let currentUser        = null;
 let currentAuthRoleUserId = null;
-let currentFsRoleUserId = null;
+let currentFsRoleUserId   = null;
 
 const FS_ROLES = ['STUDENT', 'TEACHER', 'TUTOR', 'PROJECTMANAGER', 'SCHOOLDIRECTOR', 'MODERATOR', 'ADMIN'];
 
-function activateSection(sectionName) {
+// ── Bootstrap ─────────────────────────────────────────────────
+
+async function bootstrap() {
+  setupNavigation();
+  setupTabSwitching();
+  setupProfileButton();
+  setupLoginModal();
+
+  // Services dashboard is always visible — load immediately
+  activateSection('services');
+  loadServiceHealth();
+
+  // Check whether a session already exists
+  await refreshSession();
+}
+
+async function refreshSession() {
+  const res = await fetch('/api/me');
+  if (!res.ok) { setLoggedOut(); return; }
+  const me = await res.json();
+  applyLoggedInState(me);
+}
+
+function applyLoggedInState(me) {
+  currentUser = me;
+
+  // Reveal auth-required nav items
+  document.querySelectorAll('.nav-btn[data-auth]').forEach(b => b.classList.remove('hidden'));
+
+  // Profile button — show initials
+  const initials = me.email.split('@')[0].slice(0, 2).toUpperCase();
+  document.getElementById('profile-initials').textContent = initials;
+  document.getElementById('profile-btn').classList.add('logged-in');
+
+  // Update section badges
+  const asBadge = document.getElementById('auth-service-badge');
+  asBadge.textContent = me.services.authService ? 'verbunden' : 'nicht verbunden';
+  asBadge.className   = 'badge ' + (me.services.authService ? 'ok' : 'warn');
+
+  const fsBadge = document.getElementById('freeschool-badge');
+  fsBadge.textContent = me.services.freeSchool ? 'verbunden' : 'nicht verbunden';
+  fsBadge.className   = 'badge ' + (me.services.freeSchool ? 'ok' : 'warn');
+
+  // Auto-load data for connected services
+  if (me.services.authService) loadAuthUsers();
+  if (me.services.freeSchool)  loadFsUsers();
+}
+
+function setLoggedOut() {
+  currentUser = null;
+  document.querySelectorAll('.nav-btn[data-auth]').forEach(b => b.classList.add('hidden'));
+  document.getElementById('profile-btn').classList.remove('logged-in');
+  document.getElementById('profile-initials').textContent = '';
+
+  // Navigate away from auth-required sections
+  const authSections = new Set(['auth-service', 'freeschool', 'migration', 'settings']);
+  const active = document.querySelector('.section.active');
+  if (active && authSections.has(active.id.replace('section-', ''))) {
+    activateSection('services');
+  }
+}
+
+// ── Navigation ────────────────────────────────────────────────
+
+function activateSection(name) {
   document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
   document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
-  const btn = document.querySelector(`.nav-btn[data-section="${sectionName}"]`);
+  const btn = document.querySelector(`.nav-btn[data-section="${name}"]`);
   if (btn) btn.classList.add('active');
-  const sec = document.getElementById('section-' + sectionName);
+  const sec = document.getElementById('section-' + name);
   if (sec) sec.classList.add('active');
 }
 
-async function bootstrap() {
-  // Navigation (always set up)
+function setupNavigation() {
   document.querySelectorAll('.nav-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       activateSection(btn.dataset.section);
+      if (btn.dataset.section === 'services')  loadServiceHealth();
+      if (btn.dataset.section === 'settings')  loadSettings();
     });
   });
+}
 
-  // Tab switching (scoped to parent section)
+function setupTabSwitching() {
   document.querySelectorAll('.tab-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       const section = btn.closest('.section');
@@ -32,55 +99,136 @@ async function bootstrap() {
       document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
     });
   });
-
-  // Load settings when that section is opened
-  document.querySelector('[data-section="settings"]').addEventListener('click', loadSettings);
-
-  const res = await fetch('/api/me');
-
-  if (res.status === 401) {
-    // Not logged in — show only Services (IsAlive dashboard)
-    document.querySelectorAll('.nav-btn[data-auth]').forEach(b => b.classList.add('hidden'));
-    document.getElementById('logout-btn').classList.add('hidden');
-    document.getElementById('login-link').classList.remove('hidden');
-    activateSection('services');
-    loadServiceHealth();
-    return;
-  }
-
-  const me = await res.json();
-  document.getElementById('user-email').textContent = me.email;
-
-  // Show service badges
-  document.getElementById('auth-service-badge').textContent =
-    me.services.authService ? 'verbunden' : 'nicht verbunden';
-  document.getElementById('auth-service-badge').className =
-    'badge ' + (me.services.authService ? 'ok' : 'warn');
-
-  document.getElementById('freeschool-badge').textContent =
-    me.services.freeSchool ? 'verbunden' : 'nicht verbunden';
-  document.getElementById('freeschool-badge').className =
-    'badge ' + (me.services.freeSchool ? 'ok' : 'warn');
-
-  document.getElementById('logout-btn').addEventListener('click', async () => {
-    await fetch('/api/logout', { method: 'POST' });
-    window.location.href = '/login.html';
-  });
-
-  // Auto-load first tab data
-  if (me.services.authService) loadAuthUsers();
-  if (me.services.freeSchool) loadFsUsers();
-
-  // Auth-required nav items are visible by default (no data-auth hiding needed)
-  // Auto-load service health when section is opened
-  document.querySelector('[data-section="services"]').addEventListener('click', loadServiceHealth);
-
-  // Start on services section (shows IsAlive dashboard immediately)
-  activateSection('services');
-  loadServiceHealth();
 }
 
-// ── Helpers ──────────────────────────────────────────────────
+// ── Profile Button & Dropdown ─────────────────────────────────
+
+function setupProfileButton() {
+  const btn = document.getElementById('profile-btn');
+  btn.addEventListener('click', e => {
+    e.stopPropagation();
+    if (currentUser) {
+      toggleProfileDropdown();
+    } else {
+      closeProfileDropdown();
+      openLoginModal();
+    }
+  });
+
+  // Close dropdown when clicking outside
+  document.addEventListener('click', () => closeProfileDropdown());
+  document.getElementById('profile-dropdown').addEventListener('click', e => e.stopPropagation());
+}
+
+function toggleProfileDropdown() {
+  const dd = document.getElementById('profile-dropdown');
+  if (dd.classList.contains('hidden')) openProfileDropdown();
+  else closeProfileDropdown();
+}
+
+function openProfileDropdown() {
+  if (!currentUser) return;
+  const me = currentUser;
+
+  document.getElementById('profile-dropdown-content').innerHTML = `
+    <div class="dropdown-email">${me.email}</div>
+    <div class="dropdown-badges">
+      <span class="badge ${me.services.authService ? 'ok' : 'warn'}">
+        AuthService ${me.services.authService ? '✓' : '✗'}
+      </span>
+      <span class="badge ${me.services.freeSchool ? 'ok' : 'warn'}">
+        FreeSchool ${me.services.freeSchool ? '✓' : '✗'}
+      </span>
+    </div>
+    <hr class="dropdown-divider" />
+    <button class="btn-ghost danger-ghost" id="logout-btn" style="width:100%;text-align:left">Abmelden</button>
+  `;
+
+  document.getElementById('logout-btn').addEventListener('click', async () => {
+    closeProfileDropdown();
+    await fetch('/api/logout', { method: 'POST' });
+    setLoggedOut();
+  });
+
+  document.getElementById('profile-dropdown').classList.remove('hidden');
+}
+
+function closeProfileDropdown() {
+  document.getElementById('profile-dropdown').classList.add('hidden');
+}
+
+// ── Login Modal ───────────────────────────────────────────────
+
+function setupLoginModal() {
+  document.getElementById('login-modal-close').addEventListener('click', closeLoginModal);
+
+  // Close on backdrop click
+  document.getElementById('login-modal').addEventListener('click', e => {
+    if (e.target === document.getElementById('login-modal')) closeLoginModal();
+  });
+
+  document.getElementById('login-form').addEventListener('submit', async e => {
+    e.preventDefault();
+    const btn    = document.getElementById('login-btn');
+    const errEl  = document.getElementById('login-error');
+    btn.disabled = true;
+    btn.textContent = '…';
+    errEl.classList.add('hidden');
+
+    const res = await fetch('/api/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        email:    document.getElementById('login-email').value,
+        password: document.getElementById('login-password').value,
+      }),
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      errEl.textContent = data.error ?? 'Login fehlgeschlagen';
+      errEl.classList.remove('hidden');
+      btn.disabled    = false;
+      btn.textContent = 'Anmelden';
+      return;
+    }
+
+    // Show service status briefly, then update state
+    const statusEl = document.getElementById('login-service-status');
+    statusEl.classList.remove('hidden');
+    statusEl.innerHTML = `
+      <span class="badge ${data.services.authService ? 'ok' : 'warn'}">
+        AuthService ${data.services.authService ? '✓' : '✗'}
+      </span>
+      <span class="badge ${data.services.freeSchool ? 'ok' : 'warn'}">
+        FreeSchool ${data.services.freeSchool ? '✓' : '✗'}
+      </span>
+    `;
+
+    setTimeout(async () => {
+      closeLoginModal();
+      await refreshSession();
+    }, 700);
+  });
+}
+
+function openLoginModal() {
+  document.getElementById('login-form').reset();
+  document.getElementById('login-error').classList.add('hidden');
+  document.getElementById('login-service-status').classList.add('hidden');
+  const btn = document.getElementById('login-btn');
+  btn.disabled    = false;
+  btn.textContent = 'Anmelden';
+  document.getElementById('login-modal').classList.remove('hidden');
+  setTimeout(() => document.getElementById('login-email').focus(), 50);
+}
+
+function closeLoginModal() {
+  document.getElementById('login-modal').classList.add('hidden');
+}
+
+// ── Helpers ───────────────────────────────────────────────────
 
 function renderError(el, msg) {
   el.innerHTML = `<p class="error">${msg}</p>`;
@@ -97,7 +245,8 @@ async function apiFetch(url, opts = {}) {
     try {
       const data = await res.clone().json();
       if (data.code === 'SESSION_EXPIRED') {
-        window.location.href = '/login.html';
+        setLoggedOut();
+        openLoginModal();
         throw new Error('session expired');
       }
     } catch (e) {
@@ -113,11 +262,10 @@ async function loadAuthUsers() {
   const el = document.getElementById('auth-users-table');
   el.innerHTML = '<p class="loading-text">Lade Benutzer…</p>';
   try {
-    const res = await apiFetch('/api/auth-service/admin/users');
+    const res  = await apiFetch('/api/auth-service/admin/users');
     const data = await res.json();
     if (!res.ok) { renderError(el, data.error ?? `Fehler ${res.status}`); return; }
-    const users = data.users ?? data;
-    renderAuthUsersTable(users);
+    renderAuthUsersTable(data.users ?? data);
   } catch (err) {
     if (err.message !== 'session expired') renderError(el, 'Fehler: ' + err.message);
   }
@@ -164,8 +312,8 @@ function closeAuthRolePanel() {
 
 async function saveAuthRoles() {
   if (!currentAuthRoleUserId) return;
-  const rolesRaw = document.getElementById('auth-role-input').value;
-  const roles = rolesRaw.split(',').map(r => r.trim().toUpperCase()).filter(Boolean);
+  const roles = document.getElementById('auth-role-input').value
+    .split(',').map(r => r.trim().toUpperCase()).filter(Boolean);
 
   const res = await apiFetch('/api/auth-service/admin/set_roles', {
     method: 'POST',
@@ -173,13 +321,8 @@ async function saveAuthRoles() {
     body: JSON.stringify({ user_id: currentAuthRoleUserId, roles }),
   });
 
-  if (res.ok) {
-    closeAuthRolePanel();
-    loadAuthUsers();
-  } else {
-    const d = await res.json();
-    alert('Fehler: ' + (d.detail ?? JSON.stringify(d)));
-  }
+  if (res.ok) { closeAuthRolePanel(); loadAuthUsers(); }
+  else { const d = await res.json(); alert('Fehler: ' + (d.detail ?? JSON.stringify(d))); }
 }
 
 async function importAuthUsers(input) {
@@ -188,7 +331,7 @@ async function importAuthUsers(input) {
   const form = new FormData();
   form.append('file', file);
   const res = await apiFetch('/api/auth-service/admin/users/import', { method: 'POST', body: form });
-  const d = await res.json();
+  const d   = await res.json();
   alert(`Import: ${d.created ?? 0} erstellt, ${d.updated ?? 0} aktualisiert, ${d.skipped ?? 0} übersprungen`);
   loadAuthUsers();
 }
@@ -200,7 +343,7 @@ async function loadJwtKeyStorage() {
   el.textContent = 'Lade…';
   try {
     const res = await apiFetch('/api/auth-service/admin/jwt/key-storage');
-    const d = await res.json();
+    const d   = await res.json();
     if (!res.ok) { el.textContent = 'Fehler: ' + (d.error ?? res.status); return; }
     el.textContent = JSON.stringify(d, null, 2);
   } catch (err) {
@@ -214,7 +357,7 @@ async function loadFsUsers() {
   const el = document.getElementById('fs-users-table');
   el.innerHTML = '<p class="loading-text">Lade Benutzer…</p>';
   try {
-    const res = await apiFetch('/api/freeschool/admin/users');
+    const res  = await apiFetch('/api/freeschool/admin/users');
     const data = await res.json();
     if (!res.ok) { renderError(el, data.error ?? `Fehler ${res.status}`); return; }
     renderFsUsersTable(data);
@@ -253,8 +396,7 @@ function renderFsUsersTable(users) {
 function openFsRolePanel(id, email, currentRoles) {
   currentFsRoleUserId = id;
   document.getElementById('fs-role-user-email').textContent = email;
-  const container = document.getElementById('fs-role-checkboxes');
-  container.innerHTML = FS_ROLES.map(r => `
+  document.getElementById('fs-role-checkboxes').innerHTML = FS_ROLES.map(r => `
     <label>
       <input type="checkbox" value="${r}" ${currentRoles.includes(r) ? 'checked' : ''} />
       ${r}
@@ -269,8 +411,7 @@ function closeFsRolePanel() {
 
 async function saveFsRoles() {
   if (!currentFsRoleUserId) return;
-  const roles = [...document.querySelectorAll('#fs-role-checkboxes input:checked')]
-    .map(cb => cb.value);
+  const roles = [...document.querySelectorAll('#fs-role-checkboxes input:checked')].map(cb => cb.value);
 
   const res = await apiFetch(`/api/freeschool/admin/user/${currentFsRoleUserId}/roles`, {
     method: 'PUT',
@@ -278,24 +419,14 @@ async function saveFsRoles() {
     body: JSON.stringify({ roles }),
   });
 
-  if (res.ok) {
-    closeFsRolePanel();
-    loadFsUsers();
-  } else {
-    const d = await res.json();
-    alert('Fehler: ' + (d.detail ?? JSON.stringify(d)));
-  }
+  if (res.ok) { closeFsRolePanel(); loadFsUsers(); }
+  else { const d = await res.json(); alert('Fehler: ' + (d.detail ?? JSON.stringify(d))); }
 }
 
 // ── FreeSchool — Backup ───────────────────────────────────────
 
-async function downloadFsBackupJson() {
-  window.open('/api/freeschool/admin/backup/json', '_blank');
-}
-
-async function downloadFsBackupSql() {
-  window.open('/api/freeschool/admin/backup', '_blank');
-}
+function downloadFsBackupJson() { window.open('/api/freeschool/admin/backup/json', '_blank'); }
+function downloadFsBackupSql()  { window.open('/api/freeschool/admin/backup', '_blank'); }
 
 // ── Migration ─────────────────────────────────────────────────
 
@@ -306,12 +437,8 @@ async function previewMigration() {
 
   try {
     const res = await apiFetch('/api/migration/preview');
-    const d = await res.json();
-
-    if (!res.ok) {
-      renderError(el, d.error ?? 'Fehler');
-      return;
-    }
+    const d   = await res.json();
+    if (!res.ok) { renderError(el, d.error ?? 'Fehler'); return; }
 
     el.innerHTML = `
       <div class="migration-info">
@@ -338,16 +465,16 @@ async function previewMigration() {
 }
 
 async function runMigration() {
-  if (!confirm(`Migration jetzt ausführen? Dies kann nicht rückgängig gemacht werden.`)) return;
+  if (!confirm('Migration jetzt ausführen? Dies kann nicht rückgängig gemacht werden.')) return;
 
   const btn = document.getElementById('run-migration-btn');
-  const el = document.getElementById('migration-result');
+  const el  = document.getElementById('migration-result');
   btn.disabled = true;
   el.innerHTML = '<p class="loading-text">Migration läuft…</p>';
 
   try {
     const res = await apiFetch('/api/migration/run', { method: 'POST' });
-    const d = await res.json();
+    const d   = await res.json();
 
     if (res.ok) {
       el.innerHTML = `
@@ -385,7 +512,7 @@ async function loadServiceHealth() {
   const el = document.getElementById('services-grid');
   el.innerHTML = '<p class="loading-text">Prüfe Services…</p>';
   try {
-    const res = await fetch('/api/services/health');
+    const res  = await fetch('/api/services/health');
     const data = await res.json();
     const groupEl = document.getElementById('services-group-name');
     if (groupEl) groupEl.textContent = data.activeGroup ?? '';
@@ -400,19 +527,14 @@ function renderServiceHealth(services) {
   el.innerHTML = services.map(s => {
     const icon = SERVICE_ICONS[s.key] ?? '⚙️';
     let badgeClass, badgeText;
-    if (s.status === 'unconfigured') {
-      badgeClass = ''; badgeText = 'nicht konfiguriert';
-    } else if (s.status === 'ok') {
-      badgeClass = 'ok'; badgeText = 'erreichbar';
-    } else {
-      badgeClass = 'error'; badgeText = 'nicht erreichbar';
-    }
+    if      (s.status === 'unconfigured') { badgeClass = '';       badgeText = 'nicht konfiguriert'; }
+    else if (s.status === 'ok')           { badgeClass = 'ok';     badgeText = 'erreichbar'; }
+    else                                  { badgeClass = 'error';  badgeText = 'nicht erreichbar'; }
     const urlHtml = s.url
       ? `<a class="service-url" href="${s.url}" target="_blank" rel="noopener">${s.url}</a>`
       : `<span class="muted">–</span>`;
     const latencyHtml = s.latency != null && s.status !== 'unconfigured'
-      ? `<span class="service-latency">${s.latency} ms</span>`
-      : '';
+      ? `<span class="service-latency">${s.latency} ms</span>` : '';
     return `
       <div class="service-card ${s.status === 'unconfigured' ? 'service-card--dim' : ''}">
         <div class="service-card-header">
@@ -428,19 +550,17 @@ function renderServiceHealth(services) {
 
 // ── Einstellungen — Servergruppen ─────────────────────────────
 
-let editingGroupName = null; // null = neue Gruppe, string = bearbeiten
+let editingGroupName = null;
 
 async function loadSettings() {
   const res = await apiFetch('/api/config');
+  if (!res.ok) return;
   const cfg = await res.json();
   renderServerGroups(cfg.groups, cfg.activeGroup);
 }
 
 const EXTRA_SERVICE_KEYS = ['officeUrl', 'presenceUrl', 'liveUrl', 'recordUrl', 'profileUrl', 'matrixUrl'];
-
-function countExtraServices(g) {
-  return EXTRA_SERVICE_KEYS.filter(k => g[k]).length;
-}
+function countExtraServices(g) { return EXTRA_SERVICE_KEYS.filter(k => g[k]).length; }
 
 function renderServerGroups(groups, activeGroup) {
   const el = document.getElementById('server-groups-list');
@@ -461,7 +581,7 @@ function renderServerGroups(groups, activeGroup) {
             </td>
             <td><strong>${g.name}</strong></td>
             <td><code class="url-cell">${g.authServiceUrl || '–'}</code></td>
-            <td><code class="url-cell">${g.freeSchoolUrl || '–'}</code></td>
+            <td><code class="url-cell">${g.freeSchoolUrl  || '–'}</code></td>
             <td><span class="muted">${countExtraServices(g)} / ${EXTRA_SERVICE_KEYS.length}</span></td>
             <td style="white-space:nowrap">
               <button class="btn-ghost" onclick="editGroup('${g.name}')">Bearbeiten</button>
@@ -480,42 +600,32 @@ async function activateGroup(name) {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ name }),
   });
-  if (res.ok) {
-    loadSettings();
-  } else {
-    const d = await res.json();
-    alert('Fehler: ' + (d.error ?? 'Unbekannt'));
-  }
+  if (res.ok) loadSettings();
+  else { const d = await res.json(); alert('Fehler: ' + (d.error ?? 'Unbekannt')); }
 }
 
 async function deleteGroup(name) {
   if (!confirm(`Gruppe "${name}" wirklich löschen?`)) return;
   const res = await apiFetch(`/api/config/groups/${encodeURIComponent(name)}`, { method: 'DELETE' });
-  if (res.ok) {
-    loadSettings();
-  } else {
-    const d = await res.json();
-    alert('Fehler: ' + (d.error ?? 'Unbekannt'));
-  }
+  if (res.ok) loadSettings();
+  else { const d = await res.json(); alert('Fehler: ' + (d.error ?? 'Unbekannt')); }
 }
 
 function editGroup(name) {
-  const rows = document.querySelectorAll('#server-groups-list tbody tr');
-  // find matching group data from the table (re-fetch to be safe)
   apiFetch('/api/config').then(r => r.json()).then(cfg => {
     const g = cfg.groups.find(g => g.name === name);
     if (!g) return;
     editingGroupName = name;
     document.getElementById('group-form-title').textContent = `Gruppe bearbeiten: ${name}`;
-    document.getElementById('gf-name').value = g.name;
-    document.getElementById('gf-auth-url').value = g.authServiceUrl;
-    document.getElementById('gf-fs-url').value = g.freeSchoolUrl;
-    document.getElementById('gf-office-url').value = g.officeUrl ?? '';
-    document.getElementById('gf-presence-url').value = g.presenceUrl ?? '';
-    document.getElementById('gf-live-url').value = g.liveUrl ?? '';
-    document.getElementById('gf-record-url').value = g.recordUrl ?? '';
-    document.getElementById('gf-profile-url').value = g.profileUrl ?? '';
-    document.getElementById('gf-matrix-url').value = g.matrixUrl ?? '';
+    document.getElementById('gf-name').value         = g.name;
+    document.getElementById('gf-auth-url').value     = g.authServiceUrl;
+    document.getElementById('gf-fs-url').value       = g.freeSchoolUrl;
+    document.getElementById('gf-office-url').value   = g.officeUrl    ?? '';
+    document.getElementById('gf-presence-url').value = g.presenceUrl  ?? '';
+    document.getElementById('gf-live-url').value     = g.liveUrl      ?? '';
+    document.getElementById('gf-record-url').value   = g.recordUrl    ?? '';
+    document.getElementById('gf-profile-url').value  = g.profileUrl   ?? '';
+    document.getElementById('gf-matrix-url').value   = g.matrixUrl    ?? '';
     document.getElementById('group-form-error').classList.add('hidden');
     document.getElementById('group-form-panel').scrollIntoView({ behavior: 'smooth' });
   });
@@ -524,29 +634,23 @@ function editGroup(name) {
 function resetGroupForm() {
   editingGroupName = null;
   document.getElementById('group-form-title').textContent = 'Neue Gruppe';
-  document.getElementById('gf-name').value = '';
-  document.getElementById('gf-auth-url').value = '';
-  document.getElementById('gf-fs-url').value = '';
-  document.getElementById('gf-office-url').value = '';
-  document.getElementById('gf-presence-url').value = '';
-  document.getElementById('gf-live-url').value = '';
-  document.getElementById('gf-record-url').value = '';
-  document.getElementById('gf-profile-url').value = '';
-  document.getElementById('gf-matrix-url').value = '';
+  ['gf-name','gf-auth-url','gf-fs-url','gf-office-url','gf-presence-url',
+   'gf-live-url','gf-record-url','gf-profile-url','gf-matrix-url']
+    .forEach(id => { document.getElementById(id).value = ''; });
   document.getElementById('group-form-error').classList.add('hidden');
 }
 
 async function saveGroup() {
-  const name = document.getElementById('gf-name').value.trim();
-  const authServiceUrl = document.getElementById('gf-auth-url').value.trim();
+  const name          = document.getElementById('gf-name').value.trim();
+  const authServiceUrl= document.getElementById('gf-auth-url').value.trim();
   const freeSchoolUrl = document.getElementById('gf-fs-url').value.trim();
-  const officeUrl = document.getElementById('gf-office-url').value.trim();
-  const presenceUrl = document.getElementById('gf-presence-url').value.trim();
-  const liveUrl = document.getElementById('gf-live-url').value.trim();
-  const recordUrl = document.getElementById('gf-record-url').value.trim();
-  const profileUrl = document.getElementById('gf-profile-url').value.trim();
-  const matrixUrl = document.getElementById('gf-matrix-url').value.trim();
-  const errEl = document.getElementById('group-form-error');
+  const officeUrl     = document.getElementById('gf-office-url').value.trim();
+  const presenceUrl   = document.getElementById('gf-presence-url').value.trim();
+  const liveUrl       = document.getElementById('gf-live-url').value.trim();
+  const recordUrl     = document.getElementById('gf-record-url').value.trim();
+  const profileUrl    = document.getElementById('gf-profile-url').value.trim();
+  const matrixUrl     = document.getElementById('gf-matrix-url').value.trim();
+  const errEl         = document.getElementById('group-form-error');
 
   if (!name || !authServiceUrl || !freeSchoolUrl) {
     errEl.textContent = 'Name, AuthService URL und FreeSchool URL sind erforderlich.';
@@ -560,16 +664,10 @@ async function saveGroup() {
     body: JSON.stringify({ name, authServiceUrl, freeSchoolUrl, officeUrl, presenceUrl, liveUrl, recordUrl, profileUrl, matrixUrl }),
   });
 
-  if (res.ok) {
-    resetGroupForm();
-    loadSettings();
-  } else {
-    const d = await res.json();
-    errEl.textContent = d.error ?? 'Fehler beim Speichern';
-    errEl.classList.remove('hidden');
-  }
+  if (res.ok) { resetGroupForm(); loadSettings(); }
+  else { const d = await res.json(); errEl.textContent = d.error ?? 'Fehler beim Speichern'; errEl.classList.remove('hidden'); }
 }
 
-// ── Start ────────────────────────────────────────────────────
+// ── Start ─────────────────────────────────────────────────────
 
 bootstrap();
