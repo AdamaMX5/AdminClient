@@ -15,7 +15,7 @@ async function getAuthToken(req: Request, res: Response): Promise<string | null>
   if (isTokenExpiring(req.session.authToken)) {
     const ok = await refreshAuthToken(req);
     if (!ok) {
-      res.status(401).json({ error: 'AuthService session expired — please log in again' });
+      res.status(401).json({ error: 'AuthService session expired — please log in again', code: 'SESSION_EXPIRED' });
       return null;
     }
   }

@@ -20,7 +20,8 @@ function decodePayload(token: string): Record<string, unknown> | null {
 export function isTokenExpiring(token: string | undefined, bufferSeconds = 60): boolean {
   if (!token) return true;
   const payload = decodePayload(token);
-  if (!payload || typeof payload.exp !== 'number') return true;
+  if (!payload) return true;
+  if (typeof payload.exp !== 'number') return false; // kein exp → als gültig behandeln
   return Date.now() / 1000 > payload.exp - bufferSeconds;
 }
 
@@ -53,7 +54,7 @@ export async function refreshAuthToken(req: Request): Promise<boolean> {
  */
 export function requireSession(req: Request, res: Response, next: NextFunction): void {
   if (!req.session.userEmail) {
-    res.status(401).json({ error: 'Not authenticated' });
+    res.status(401).json({ error: 'Not authenticated', code: 'SESSION_EXPIRED' });
     return;
   }
   next();
