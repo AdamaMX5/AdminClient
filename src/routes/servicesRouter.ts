@@ -38,11 +38,7 @@ async function checkUrl(url: string): Promise<{ ok: boolean; code?: number; late
 }
 
 /** Shared health-check logic — used by both the internal and public endpoints. */
-export async function performHealthCheck() {
-  const group = getActiveGroup() as Record<string, string | undefined>;
-  const activeGroup = getActiveGroupName();
-
-  const services = await Promise.all(
+export async function performHealthCheck() {  const group = getActiveGroup() as unknown as Record<string, string | undefined>;  const activeGroup = getActiveGroupName();  const services = await Promise.all(
     SERVICE_DEFS.map(async (svc) => {
       const url = group[svc.key as string];
       if (!url) return { key: svc.key, label: svc.label, url: null, status: 'unconfigured' };

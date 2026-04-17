@@ -36,13 +36,28 @@ function loadConfig(): ConfigData {
     const raw = fs.readFileSync(CONFIG_PATH, 'utf-8');
     return JSON.parse(raw) as ConfigData;
   } catch {
-    // First run: seed from .env
+    // First run: seed from ALL .env variables
     const initial: ConfigData = {
       activeGroup: 'Standard',
       groups: [{
         name: 'Standard',
+        // Core Services
         authServiceUrl: process.env.AUTH_SERVICE_URL ?? '',
         freeSchoolUrl: process.env.FREESCHOOL_URL ?? '',
+        // Profile & Communication
+        profileUrl: process.env.PROFILE_SERVICE_URL ?? '',
+        emailServiceUrl: process.env.EMAIL_SERVICE_URL ?? '',
+        exceptionServiceUrl: process.env.EXCEPTION_SERVICE_URL ?? '',
+        objectServiceUrl: process.env.OBJECT_SERVICE_URL ?? '',
+        messageServiceUrl: process.env.MESSAGE_SERVICE_URL ?? '',
+        mediaServiceUrl: process.env.MEDIA_SERVICE_URL ?? '',
+        // VirtualOffice Services
+        officeUrl: process.env.VIRTUALOFFICE_PRODUCTION_URL ?? '',
+        presenceUrl: process.env.PRESENCE_SERVICE_URL ?? '',
+        liveUrl: process.env.LIVEKIT_URL ?? '',
+        recordingUrl: process.env.RECORDING_SERVICE_URL ?? '',
+        // Matrix (optional)
+        matrixUrl: '',
       }],
     };
     persist(initial);
