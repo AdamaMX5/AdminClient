@@ -62,7 +62,7 @@ export default function App() {
           <MigrationSection session={session} activeGroup={activeGroup} />
         )}
         {section === 'settings' && (
-          <SettingsSection config={config} onUpdate={handleConfigUpdate} />
+          <SettingsSection config={config} session={session} onUpdate={handleConfigUpdate} />
         )}
       </main>
     </>

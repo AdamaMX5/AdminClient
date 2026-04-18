@@ -61,6 +61,23 @@ export function requireSession(req: Request, res: Response, next: NextFunction):
 }
 
 /**
+ * Middleware: requires a valid non-expired Bearer JWT in the Authorization header.
+ */
+export function requireJwt(req: Request, res: Response, next: NextFunction): void {
+  const auth = req.headers.authorization;
+  if (!auth?.startsWith('Bearer ')) {
+    res.status(401).json({ error: 'Not authenticated' });
+    return;
+  }
+  const token = auth.slice(7);
+  if (isTokenExpiring(token, 0)) {
+    res.status(401).json({ error: 'Token expired' });
+    return;
+  }
+  next();
+}
+
+/**
  * Generic proxy helper — forwards the request to `targetUrl` with a Bearer token.
  * Handles JSON bodies and auto-refreshes the AuthService token if needed.
  */

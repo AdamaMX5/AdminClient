@@ -1,23 +1,13 @@
-import { useState } from 'react';
-import type { Config, ServerGroup } from '../types';
+import { useState, useEffect } from 'react';
+import type { Config, Session, ServerGroup } from '../types';
 
 interface Props {
   config: Config;
+  session: Session;
   onUpdate: (cfg: Config) => void;
 }
 
 const EXTRA_KEYS: (keyof ServerGroup)[] = ['officeUrl', 'presenceUrl', 'liveUrl', 'recordingUrl', 'profileUrl', 'matrixUrl'];
-
-const SUBDOMAIN_MAP: Partial<Record<keyof ServerGroup, string>> = {
-  authServiceUrl: 'auth',
-  freeSchoolUrl:  'api',
-  officeUrl:      'office',
-  presenceUrl:    'presence',
-  liveUrl:        'live',
-  recordingUrl:   'recording',
-  profileUrl:     'profile',
-  matrixUrl:      'matrix',
-};
 
 interface GroupFormState {
   domain: string;
@@ -37,10 +27,28 @@ const EMPTY_FORM: GroupFormState = {
   officeUrl: '', presenceUrl: '', liveUrl: '', recordingUrl: '', profileUrl: '', matrixUrl: '',
 };
 
-export default function SettingsSection({ config, onUpdate }: Props) {
+function apiFetch(path: string, token: string, opts: RequestInit = {}): Promise<Response> {
+  return fetch(path, {
+    ...opts,
+    headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json', ...(opts.headers ?? {}) },
+  });
+}
+
+export default function SettingsSection({ config, session, onUpdate }: Props) {
   const [editingName, setEditingName] = useState<string | null>(null);
   const [form, setForm]               = useState<GroupFormState>(EMPTY_FORM);
   const [formError, setFormError]     = useState('');
+  const [syncError, setSyncError]     = useState('');
+
+  const token = session.authToken;
+
+  useEffect(() => {
+    if (!token) return;
+    apiFetch('/api/config', token)
+      .then(r => r.ok ? r.json() : Promise.reject(r.status))
+      .then((data: Config) => onUpdate(data))
+      .catch(() => setSyncError('Server-Config konnte nicht geladen werden.'));
+  }, [token]);
 
   function set(field: keyof GroupFormState, value: string) {
     setForm(prev => ({ ...prev, [field]: value }));
@@ -86,7 +94,7 @@ export default function SettingsSection({ config, onUpdate }: Props) {
     setFormError('');
   }
 
-  function saveGroup() {
+  async function saveGroup() {
     const { name, authServiceUrl, freeSchoolUrl } = form;
     if (!name || !authServiceUrl || !freeSchoolUrl) {
       setFormError('Name, AuthService URL und FreeSchool URL sind erforderlich.');
@@ -114,28 +122,58 @@ export default function SettingsSection({ config, onUpdate }: Props) {
       groups.push(group);
       if (!activeGroup) activeGroup = name;
     }
+
+    if (token) {
+      const r = await apiFetch('/api/config/groups', token, {
+        method: 'POST',
+        body: JSON.stringify(group),
+      });
+      if (!r.ok) { setFormError('Fehler beim Speichern auf dem Server.'); return; }
+    }
+
     onUpdate({ activeGroup, groups });
     resetForm();
   }
 
-  function activateGroup(name: string) {
+  async function activateGroup(name: string) {
+    if (token) {
+      const r = await apiFetch('/api/config/active', token, {
+        method: 'POST',
+        body: JSON.stringify({ name }),
+      });
+      if (!r.ok) { setSyncError('Fehler beim Setzen der aktiven Gruppe.'); return; }
+    }
     onUpdate({ ...config, activeGroup: name });
   }
 
-  function deleteGroup(name: string) {
+  async function deleteGroup(name: string) {
     if (!confirm(`Gruppe "${name}" wirklich löschen?`)) return;
     if (config.groups.length <= 1) { alert('Letzte Gruppe kann nicht gelöscht werden.'); return; }
     if (config.activeGroup === name) { alert('Aktive Gruppe kann nicht gelöscht werden.'); return; }
+
+    if (token) {
+      const r = await apiFetch(`/api/config/groups/${encodeURIComponent(name)}`, token, { method: 'DELETE' });
+      if (!r.ok) { setSyncError('Fehler beim Löschen auf dem Server.'); return; }
+    }
+
     onUpdate({ ...config, groups: config.groups.filter(g => g.name !== name) });
   }
 
   return (
     <>
-      <div className="section-header"><h1>Einstellungen</h1></div>
+      <div className="section-header">
+        <h1>Einstellungen</h1>
+        {token
+          ? <span className="badge ok">Server-Config</span>
+          : <span className="badge warn">Nur lokal (nicht angemeldet)</span>}
+      </div>
+
+      {syncError && <p className="error-text">{syncError}</p>}
 
       <h2 className="settings-heading">Servergruppen</h2>
       <p className="hint" style={{ marginBottom: '1rem' }}>
-        Jede Gruppe enthält die URLs für AuthService und FreeSchool. Die aktive Gruppe wird für alle API-Anfragen verwendet.
+        Jede Gruppe enthält die URLs für alle Services. Die aktive Gruppe wird für alle API-Anfragen verwendet.
+        {token && ' Änderungen werden auf dem Server gespeichert.'}
       </p>
 
       {config.groups.length === 0 ? (
@@ -169,13 +207,12 @@ export default function SettingsSection({ config, onUpdate }: Props) {
         </table>
       )}
 
-      {/* ── Add / Edit form ── */}
       <div className="form-panel" id="gf-name">
         <h3>{editingName ? `Gruppe bearbeiten: ${editingName}` : 'Neue Gruppe'}</h3>
 
         <div className="form-row">
           <label>Name</label>
-          <input id="gf-name" type="text" value={form.name} onChange={e => set('name', e.target.value)} placeholder="z.B. Produktion" />
+          <input type="text" value={form.name} onChange={e => set('name', e.target.value)} placeholder="z.B. Produktion" />
         </div>
         <div className="form-row">
           <label>AuthService URL</label>

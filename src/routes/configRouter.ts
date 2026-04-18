@@ -1,9 +1,9 @@
 import { Router, Request, Response } from 'express';
-import { requireSession } from '../lib/tokenUtils';
+import { requireJwt } from '../lib/tokenUtils';
 import * as configStore from '../lib/configStore';
 
 const router = Router();
-router.use(requireSession);
+router.use(requireJwt);
 
 /** GET /api/config */
 router.get('/', (_req: Request, res: Response): void => {
