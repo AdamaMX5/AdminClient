@@ -43,12 +43,11 @@ export default function SettingsSection({ config, session, onUpdate }: Props) {
   const token = session.authToken;
 
   useEffect(() => {
-    if (!token) return;
-    apiFetch('/api/config', token)
+    fetch('/api/config')
       .then(r => r.ok ? r.json() : Promise.reject(r.status))
       .then((data: Config) => onUpdate(data))
       .catch(() => setSyncError('Server-Config konnte nicht geladen werden.'));
-  }, [token]);
+  }, []);
 
   function set(field: keyof GroupFormState, value: string) {
     setForm(prev => ({ ...prev, [field]: value }));
@@ -163,9 +162,7 @@ export default function SettingsSection({ config, session, onUpdate }: Props) {
     <>
       <div className="section-header">
         <h1>Einstellungen</h1>
-        {token
-          ? <span className="badge ok">Server-Config</span>
-          : <span className="badge warn">Nur lokal (nicht angemeldet)</span>}
+        <span className="badge ok">Server-Config</span>
       </div>
 
       {syncError && <p className="error-text">{syncError}</p>}
@@ -173,7 +170,7 @@ export default function SettingsSection({ config, session, onUpdate }: Props) {
       <h2 className="settings-heading">Servergruppen</h2>
       <p className="hint" style={{ marginBottom: '1rem' }}>
         Jede Gruppe enthält die URLs für alle Services. Die aktive Gruppe wird für alle API-Anfragen verwendet.
-        {token && ' Änderungen werden auf dem Server gespeichert.'}
+        {token ? ' Änderungen werden auf dem Server gespeichert.' : ' Anmelden, um Änderungen zu speichern.'}
       </p>
 
       {config.groups.length === 0 ? (

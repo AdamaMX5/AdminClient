@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import type { Config, Session } from './types';
 import { loadConfig, saveConfig, getActiveGroup } from './lib/config';
 import { loadSession, saveSession, clearSession } from './lib/session';
@@ -18,6 +18,13 @@ export default function App() {
   const [session, setSession] = useState<Session>(loadSession);
 
   const activeGroup = getActiveGroup(config);
+
+  useEffect(() => {
+    fetch('/api/config')
+      .then(r => r.ok ? r.json() : null)
+      .then((data: Config | null) => { if (data) handleConfigUpdate(data); })
+      .catch(() => {});
+  }, []);
 
   function handleConfigUpdate(cfg: Config) {
     saveConfig(cfg);
