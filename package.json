@@ -5,6 +5,7 @@
   "main": "dist/server.js",
   "scripts": {
     "build": "tsc",
+    "build:admin": "cd frontend && npm run build && cp dist/index.html ../src/public/index.html && cp dist/index.html ../admin.html",
     "start": "node dist/server.js",
     "dev": "ts-node-dev --respawn --transpile-only src/server.ts"
   },

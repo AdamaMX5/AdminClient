@@ -24,12 +24,13 @@ router.post('/active', (req: Request, res: Response): void => {
 
 /** POST /api/config/groups — create or update */
 router.post('/groups', (req: Request, res: Response): void => {
-  const { name, authServiceUrl, freeSchoolUrl } = req.body as Record<string, string>;
+  const { name, authServiceUrl, freeSchoolUrl, officeUrl, presenceUrl, liveUrl, recordingUrl, profileUrl, matrixUrl } =
+    req.body as Record<string, string>;
   if (!name || !authServiceUrl || !freeSchoolUrl) {
     res.status(400).json({ error: 'name, authServiceUrl und freeSchoolUrl sind erforderlich' });
     return;
   }
-  configStore.upsertGroup({ name, authServiceUrl, freeSchoolUrl });
+  configStore.upsertGroup({ name, authServiceUrl, freeSchoolUrl, officeUrl, presenceUrl, liveUrl, recordingUrl, profileUrl, matrixUrl });
   res.json({ ok: true });
 });
 
