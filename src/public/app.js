@@ -544,6 +544,8 @@ function renderServiceHealth(services) {
       : `<span class="muted">–</span>`;
     const latencyHtml = s.latency != null && s.status !== 'unconfigured'
       ? `<span class="service-latency">${s.latency} ms</span>` : '';
+    const helloHtml = s.helloMessage
+      ? `<div class="service-hello">${s.helloMessage}</div>` : '';
     return `
       <div class="service-card ${s.status === 'unconfigured' ? 'service-card--dim' : ''}">
         <div class="service-card-header">
@@ -553,6 +555,7 @@ function renderServiceHealth(services) {
         </div>
         <div class="service-card-url">${urlHtml}</div>
         <span class="badge ${badgeClass}">${badgeText}${s.code ? ' · ' + s.code : ''}</span>
+        ${helloHtml}
       </div>`;
   }).join('');
 }

@@ -17,21 +17,24 @@ const SERVICE_DEFS: { key: keyof ServerGroup; label: string }[] = [
   { key: 'matrixUrl',          label: 'Matrix' },
 ];
 
-async function checkUrl(url: string): Promise<{ ok: boolean; code?: number; latency: number }> {
+async function checkUrl(url: string): Promise<{ ok: boolean; code?: number; latency: number; helloMessage?: string }> {
   const start = Date.now();
   try {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), 5000);
-    let r = await fetch(url, { method: 'HEAD', signal: controller.signal });
+    const r = await fetch(url, { method: 'GET', signal: controller.signal });
     clearTimeout(timer);
-    if (r.status === 405) {
-      // Service doesn't support HEAD — retry with GET
-      const c2 = new AbortController();
-      const t2 = setTimeout(() => c2.abort(), 5000);
-      r = await fetch(url, { method: 'GET', signal: c2.signal });
-      clearTimeout(t2);
-    }
-    return { ok: r.status < 500, code: r.status, latency: Date.now() - start };
+    let helloMessage: string | undefined;
+    try {
+      const text = await r.text();
+      try {
+        const json = JSON.parse(text);
+        helloMessage = typeof json === 'string' ? json : (json.message ?? JSON.stringify(json));
+      } catch {
+        helloMessage = text.trim().slice(0, 300);
+      }
+    } catch { /* ignore */ }
+    return { ok: r.status < 500, code: r.status, latency: Date.now() - start, helloMessage };
   } catch {
     return { ok: false, latency: Date.now() - start };
   }
@@ -50,6 +53,7 @@ export async function performHealthCheck() {  const group = getActiveGroup() as 
         status: check.ok ? 'ok' : 'error',
         code: check.code,
         latency: check.latency,
+        helloMessage: check.helloMessage,
       };
     }),
   );
