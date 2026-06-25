@@ -8,6 +8,7 @@ interface AuthUser {
   id: string;
   email: string;
   roles?: string[];
+  permissions?: Record<string, unknown>;
   is_email_verify?: boolean;
   last_login?: string;
 }
@@ -17,10 +18,87 @@ function RolePills({ roles }: { roles?: string[] }) {
   return <>{roles.map(r => <span key={r} className="role-pill">{r}</span>)}</>;
 }
 
+function PermissionPills({ permissions }: { permissions?: Record<string, unknown> }) {
+  const entries = Object.entries(permissions ?? {});
+  if (!entries.length) return <span className="muted">–</span>;
+  return <>{entries.map(([k, v]) => (
+    <span key={k} className="perm-pill">{k}: {JSON.stringify(v)}</span>
+  ))}</>;
+}
+
+function PermissionsPanel({ user, baseUrl, onClose, onChanged }: {
+  user: AuthUser;
+  baseUrl: string;
+  onClose: () => void;
+  onChanged: () => void;
+}) {
+  const [keyInput, setKeyInput]     = useState('');
+  const [valueInput, setValueInput] = useState('');
+  const [saving, setSaving] = useState(false);
+
+  const entries = Object.entries(user.permissions ?? {});
+
+  // Parse the value as JSON so booleans/numbers/objects work; fall back to raw string.
+  function parseValue(raw: string): unknown {
+    try { return JSON.parse(raw); } catch { return raw; }
+  }
+
+  async function post(path: string, body: object): Promise<boolean> {
+    setSaving(true);
+    try {
+      const res = await authFetch(`${baseUrl}${path}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+      if (res.ok) { onChanged(); return true; }
+      const d = await res.json() as { detail?: string };
+      alert('Fehler: ' + (d.detail ?? 'Unbekannt'));
+    } catch (e: unknown) { alert(String(e)); }
+    finally { setSaving(false); }
+    return false;
+  }
+
+  async function upsert() {
+    const key = keyInput.trim();
+    if (!key) return;
+    const ok = await post('/admin/upsert_permission', { user_id: user.id, key, value: parseValue(valueInput) });
+    if (ok) { setKeyInput(''); setValueInput(''); }
+  }
+
+  return (
+    <div className="panel">
+      <h3>Berechtigungen bearbeiten — {user.email}</h3>
+      {entries.length === 0 ? (
+        <p className="muted">Keine Berechtigungen gesetzt.</p>
+      ) : (
+        <ul className="perm-list">
+          {entries.map(([k, v]) => (
+            <li key={k}>
+              <span className="perm-pill">{k}: {JSON.stringify(v)}</span>
+              <button className="btn-ghost" disabled={saving}
+                onClick={() => post('/admin/remove_permission', { user_id: user.id, key: k })}>
+                Entfernen
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+      <input type="text" value={keyInput} onChange={e => setKeyInput(e.target.value)} placeholder="Schlüssel, z.B. canEdit" />
+      <input type="text" value={valueInput} onChange={e => setValueInput(e.target.value)} placeholder="Wert (JSON), z.B. true, 5, &quot;text&quot;" />
+      <div className="panel-actions">
+        <button className="btn" onClick={upsert} disabled={saving || !keyInput.trim()}>Hinzufügen / Aktualisieren</button>
+        <button className="btn-ghost" onClick={onClose}>Abbrechen</button>
+      </div>
+    </div>
+  );
+}
+
 function UsersTab({ activeGroup }: { activeGroup: ServerGroup }) {
   const [users, setUsers]   = useState<AuthUser[] | null>(null);
   const [error, setError]   = useState('');
   const [editUser, setEditUser] = useState<AuthUser | null>(null);
+  const [permUser, setPermUser] = useState<AuthUser | null>(null);
   const [rolesInput, setRolesInput] = useState('');
   const [saving, setSaving] = useState(false);
 
@@ -32,7 +110,10 @@ function UsersTab({ activeGroup }: { activeGroup: ServerGroup }) {
       const res = await authFetch(`${activeGroup.authServiceUrl}/admin/users`);
       if (!res.ok) { setError(`Fehler ${res.status}`); return; }
       const data = await res.json() as { users?: AuthUser[] } | AuthUser[];
-      setUsers(Array.isArray(data) ? data : data.users ?? []);
+      const list = Array.isArray(data) ? data : data.users ?? [];
+      setUsers(list);
+      // Keep an open permissions panel in sync with reloaded data.
+      setPermUser(prev => prev ? list.find(u => u.id === prev.id) ?? null : null);
     } catch (e: unknown) {
       setError(String(e));
     }
@@ -87,7 +168,7 @@ function UsersTab({ activeGroup }: { activeGroup: ServerGroup }) {
       ) : (
         <table>
           <thead>
-            <tr><th>ID</th><th>E-Mail</th><th>Rollen</th><th>E-Mail bestätigt</th><th>Letzter Login</th><th></th></tr>
+            <tr><th>ID</th><th>E-Mail</th><th>Rollen</th><th>Berechtigungen</th><th>E-Mail bestätigt</th><th>Letzter Login</th><th></th></tr>
           </thead>
           <tbody>
             {users.map(u => (
@@ -95,11 +176,15 @@ function UsersTab({ activeGroup }: { activeGroup: ServerGroup }) {
                 <td><code>{u.id}</code></td>
                 <td>{u.email}</td>
                 <td><RolePills roles={u.roles} /></td>
+                <td><PermissionPills permissions={u.permissions} /></td>
                 <td><span className={`badge ${u.is_email_verify ? 'ok' : 'warn'}`}>{u.is_email_verify ? 'ja' : 'nein'}</span></td>
                 <td>{u.last_login ? new Date(u.last_login).toLocaleString('de-DE') : '–'}</td>
                 <td>
                   <button className="btn-ghost" onClick={() => { setEditUser(u); setRolesInput((u.roles ?? []).join(', ')); }}>
                     Rollen
+                  </button>
+                  <button className="btn-ghost" onClick={() => setPermUser(u)}>
+                    Berechtigungen
                   </button>
                 </td>
               </tr>
@@ -122,6 +207,15 @@ function UsersTab({ activeGroup }: { activeGroup: ServerGroup }) {
             <button className="btn-ghost" onClick={() => setEditUser(null)}>Abbrechen</button>
           </div>
         </div>
+      )}
+
+      {permUser && (
+        <PermissionsPanel
+          user={permUser}
+          baseUrl={activeGroup.authServiceUrl}
+          onClose={() => setPermUser(null)}
+          onChanged={load}
+        />
       )}
     </>
   );
