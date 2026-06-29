@@ -6,11 +6,12 @@ import Sidebar from './components/Sidebar';
 import MonitorSection from './sections/Monitor';
 import ServicesSection from './sections/Services';
 import AuthServiceSection from './sections/AuthService';
+import GitServiceSection from './sections/GitService';
 import FreeSchoolSection from './sections/FreeSchool';
 import MigrationSection from './sections/Migration';
 import SettingsSection from './sections/Settings';
 
-export type SectionId = 'monitor' | 'services' | 'auth-service' | 'freeschool' | 'migration' | 'settings';
+export type SectionId = 'monitor' | 'services' | 'auth-service' | 'git-service' | 'freeschool' | 'migration' | 'settings';
 
 export default function App() {
   const [section, setSection] = useState<SectionId>('monitor');
@@ -61,6 +62,9 @@ export default function App() {
         )}
         {section === 'auth-service' && (
           <AuthServiceSection session={session} activeGroup={activeGroup} />
+        )}
+        {section === 'git-service' && (
+          <GitServiceSection session={session} activeGroup={activeGroup} />
         )}
         {section === 'freeschool' && (
           <FreeSchoolSection session={session} activeGroup={activeGroup} />

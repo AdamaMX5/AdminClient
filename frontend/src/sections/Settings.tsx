@@ -7,7 +7,7 @@ interface Props {
   onUpdate: (cfg: Config) => void;
 }
 
-const EXTRA_KEYS: (keyof ServerGroup)[] = ['officeUrl', 'presenceUrl', 'liveUrl', 'recordingUrl', 'profileUrl', 'matrixUrl'];
+const EXTRA_KEYS: (keyof ServerGroup)[] = ['officeUrl', 'presenceUrl', 'liveUrl', 'recordingUrl', 'profileUrl', 'matrixUrl', 'gitServiceUrl'];
 
 interface GroupFormState {
   domain: string;
@@ -20,11 +20,12 @@ interface GroupFormState {
   recordingUrl: string;
   profileUrl: string;
   matrixUrl: string;
+  gitServiceUrl: string;
 }
 
 const EMPTY_FORM: GroupFormState = {
   domain: '', name: '', authServiceUrl: '', freeSchoolUrl: '',
-  officeUrl: '', presenceUrl: '', liveUrl: '', recordingUrl: '', profileUrl: '', matrixUrl: '',
+  officeUrl: '', presenceUrl: '', liveUrl: '', recordingUrl: '', profileUrl: '', matrixUrl: '', gitServiceUrl: '',
 };
 
 function apiFetch(path: string, token: string, opts: RequestInit = {}): Promise<Response> {
@@ -66,6 +67,7 @@ export default function SettingsSection({ config, session, onUpdate }: Props) {
       recordingUrl:   `https://recording.${base}`,
       profileUrl:     `https://profile.${base}`,
       matrixUrl:      `https://matrix.${base}`,
+      gitServiceUrl:  `https://git.${base}`,
     }));
   }
 
@@ -82,6 +84,7 @@ export default function SettingsSection({ config, session, onUpdate }: Props) {
       recordingUrl:   g.recordingUrl ?? '',
       profileUrl:     g.profileUrl ?? '',
       matrixUrl:      g.matrixUrl ?? '',
+      gitServiceUrl:  g.gitServiceUrl ?? '',
     });
     setFormError('');
     setTimeout(() => document.getElementById('gf-name')?.scrollIntoView({ behavior: 'smooth' }), 50);
@@ -109,6 +112,7 @@ export default function SettingsSection({ config, session, onUpdate }: Props) {
       recordingUrl: form.recordingUrl || undefined,
       profileUrl:   form.profileUrl   || undefined,
       matrixUrl:    form.matrixUrl    || undefined,
+      gitServiceUrl: form.gitServiceUrl || undefined,
     };
 
     const groups = [...config.groups];
@@ -245,6 +249,7 @@ export default function SettingsSection({ config, session, onUpdate }: Props) {
             ['recordingUrl', 'Recording URL', 'https://recording.example.com'],
             ['profileUrl',   'Profile URL',   'https://profile.example.com'],
             ['matrixUrl',    'Matrix URL',    'https://matrix.example.com'],
+            ['gitServiceUrl','GitService URL','https://git.example.com'],
           ] as [keyof GroupFormState, string, string][]
         ).map(([key, label, placeholder]) => (
           <div className="form-row" key={key}>

@@ -8,6 +8,7 @@ export interface ServerGroup {
   recordingUrl?: string;
   profileUrl?: string;
   matrixUrl?: string;
+  gitServiceUrl?: string;
 }
 
 export interface Config {

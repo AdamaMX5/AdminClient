@@ -16,6 +16,7 @@ export interface ServerGroup {
   liveUrl?: string;
   recordingUrl?: string;
   matrixUrl?: string;
+  gitServiceUrl?: string;
 }
 
 interface ConfigData {
@@ -56,6 +57,8 @@ function loadConfig(): ConfigData {
         presenceUrl: process.env.PRESENCE_SERVICE_URL ?? '',
         liveUrl: process.env.LIVEKIT_URL ?? '',
         recordingUrl: process.env.RECORDING_SERVICE_URL ?? '',
+        // Git abstraction
+        gitServiceUrl: process.env.GIT_SERVICE_URL ?? '',
         // Matrix (optional)
         matrixUrl: '',
       }],
