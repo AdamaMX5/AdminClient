@@ -87,6 +87,7 @@ export default function Sidebar({ section, onSection, session, activeGroup, onLo
   return (
     <aside className="sidebar">
       <div className="logo">Freischule <span>Admin</span></div>
+      <div className="app-version" title="Git-Hash des aktuellen Builds">Version {__GIT_HASH__}</div>
 
       <nav>
         {NAV_ITEMS.map(item => (

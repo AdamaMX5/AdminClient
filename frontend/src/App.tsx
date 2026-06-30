@@ -58,7 +58,7 @@ export default function App() {
           <MonitorSection />
         )}
         {section === 'services' && (
-          <ServicesSection activeGroup={activeGroup} groupName={config.activeGroup} />
+          <ServicesSection activeGroup={activeGroup} groupName={config.activeGroup} onSection={setSection} />
         )}
         {section === 'auth-service' && (
           <AuthServiceSection session={session} activeGroup={activeGroup} />

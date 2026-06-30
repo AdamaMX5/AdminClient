@@ -1,13 +1,22 @@
 import { useState, useEffect } from 'react';
 import type { ServerGroup, HealthResult } from '../types';
+import type { SectionId } from '../App';
 import { checkAllServices } from '../lib/api';
 
 interface Props {
   activeGroup: ServerGroup;
   groupName: string;
+  onSection: (s: SectionId) => void;
 }
 
-export default function ServicesSection({ activeGroup, groupName }: Props) {
+// Services that have a dedicated management view in the admin UI — their card
+// becomes clickable and jumps straight to that section.
+const SECTION_FOR_KEY: Partial<Record<string, SectionId>> = {
+  authServiceUrl: 'auth-service',
+  gitServiceUrl:  'git-service',
+};
+
+export default function ServicesSection({ activeGroup, groupName, onSection }: Props) {
   const [results, setResults] = useState<(HealthResult & { icon: string })[] | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -43,6 +52,7 @@ export default function ServicesSection({ activeGroup, groupName }: Props) {
             if (s.status === 'unconfigured') { badgeText = 'nicht konfiguriert'; }
             else if (s.status === 'ok')      { badgeClass = 'ok';    badgeText = 'erreichbar'; }
             else                             { badgeClass = 'error'; badgeText = 'nicht erreichbar'; }
+            const targetSection = SECTION_FOR_KEY[s.key];
             return (
               <div key={s.key} className={`service-card${s.status === 'unconfigured' ? ' service-card--dim' : ''}`}>
                 <div className="service-card-header">
@@ -60,6 +70,14 @@ export default function ServicesSection({ activeGroup, groupName }: Props) {
                 <span className={`badge ${badgeClass}`}>
                   {badgeText}{s.code ? ` · ${s.code}` : ''}
                 </span>
+                {s.status !== 'unconfigured' && s.helloMessage && (
+                  <div className="service-hello" title="Antwort von GET /">{s.helloMessage}</div>
+                )}
+                {targetSection && (
+                  <button className="service-manage-link" onClick={() => onSection(targetSection)}>
+                    Verwalten →
+                  </button>
+                )}
               </div>
             );
           })}

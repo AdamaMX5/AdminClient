@@ -17,6 +17,7 @@ export interface ServerGroup {
   recordingUrl?: string;
   matrixUrl?: string;
   gitServiceUrl?: string;
+  landingUrl?: string;
 }
 
 interface ConfigData {
@@ -59,6 +60,8 @@ function loadConfig(): ConfigData {
         recordingUrl: process.env.RECORDING_SERVICE_URL ?? '',
         // Git abstraction
         gitServiceUrl: process.env.GIT_SERVICE_URL ?? '',
+        // FreeSchool public landing page (bare domain, e.g. https://freischule.info)
+        landingUrl: process.env.LANDING_URL ?? '',
         // Matrix (optional)
         matrixUrl: '',
       }],

@@ -19,20 +19,28 @@ export async function fsFetch(url: string, opts: RequestInit = {}): Promise<Resp
   });
 }
 
-export async function checkUrl(url: string): Promise<{ ok: boolean; code?: number; latency: number }> {
+export async function checkUrl(url: string): Promise<{ ok: boolean; code?: number; latency: number; helloMessage?: string }> {
   const start = Date.now();
   try {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), 5000);
-    let r = await fetch(url, { method: 'HEAD', signal: controller.signal });
+    // GET (not HEAD) so we can read the "Hello World" body and confirm nginx routed
+    // to the right service.
+    const r = await fetch(url, { method: 'GET', signal: controller.signal });
     clearTimeout(timer);
-    if (r.status === 405) {
-      const c2 = new AbortController();
-      const t2 = setTimeout(() => c2.abort(), 5000);
-      r = await fetch(url, { method: 'GET', signal: c2.signal });
-      clearTimeout(t2);
-    }
-    return { ok: r.status < 500, code: r.status, latency: Date.now() - start };
+
+    let helloMessage: string | undefined;
+    try {
+      const text = await r.text();
+      try {
+        const json = JSON.parse(text);
+        helloMessage = typeof json === 'string' ? json : (json.message ?? JSON.stringify(json));
+      } catch {
+        helloMessage = text.trim().slice(0, 200);
+      }
+    } catch { /* body unreadable (e.g. CORS) — leave undefined */ }
+
+    return { ok: r.status < 500, code: r.status, latency: Date.now() - start, helloMessage };
   } catch {
     return { ok: false, latency: Date.now() - start };
   }
@@ -40,13 +48,13 @@ export async function checkUrl(url: string): Promise<{ ok: boolean; code?: numbe
 
 const SERVICE_DEFS: { key: keyof ServerGroup; label: string; icon: string }[] = [
   { key: 'authServiceUrl', label: 'AuthService',   icon: '🔐' },
-  { key: 'freeSchoolUrl',  label: 'FreeSchool API', icon: '🏫' },
-  { key: 'officeUrl',      label: 'Office',         icon: '📄' },
-  { key: 'presenceUrl',    label: 'Presence',       icon: '📡' },
-  { key: 'liveUrl',        label: 'LiveKit',        icon: '🎥' },
-  { key: 'recordingUrl',   label: 'Recording',      icon: '🎙️' },
-  { key: 'profileUrl',     label: 'Profile',        icon: '👤' },
-  { key: 'matrixUrl',      label: 'Matrix',         icon: '💬' },
+  { key: 'gitServiceUrl',  label: 'GitService',    icon: '🔧' },
+  { key: 'officeUrl',      label: 'VirtualOffice', icon: '🏢' },
+  { key: 'landingUrl',     label: 'FreeSchule',    icon: '🏫' },
+  { key: 'liveUrl',        label: 'LiveKit',       icon: '🎥' },
+  { key: 'recordingUrl',   label: 'Recording',     icon: '🎙️' },
+  { key: 'profileUrl',     label: 'Profile',       icon: '👤' },
+  { key: 'matrixUrl',      label: 'Matrix',        icon: '💬' },
 ];
 
 export async function checkAllServices(group: ServerGroup): Promise<HealthResult[]> {
@@ -63,6 +71,7 @@ export async function checkAllServices(group: ServerGroup): Promise<HealthResult
         status: check.ok ? 'ok' as const : 'error' as const,
         code: check.code,
         latency: check.latency,
+        helloMessage: check.helloMessage,
       };
     })
   );

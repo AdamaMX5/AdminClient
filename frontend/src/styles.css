@@ -45,6 +45,9 @@ body {
 .logo { font-size: 1.15rem; font-weight: 700; letter-spacing: 0.04em; }
 .logo span { color: var(--accent); }
 
+/* Sits tight under the logo (sidebar uses gap: 1.5rem between children). */
+.app-version { margin-top: -1.25rem; font-size: 0.72rem; color: var(--muted); font-family: ui-monospace, monospace; }
+
 nav { display: flex; flex-direction: column; gap: 0.35rem; }
 
 .nav-btn {
@@ -374,6 +377,28 @@ tr:hover td { background: rgba(255,255,255,0.02); }
 .service-card-url { font-size: 0.75rem; word-break: break-all; }
 .service-url { color: var(--accent); text-decoration: none; }
 .service-url:hover { text-decoration: underline; }
+.service-hello {
+  font-size: 0.72rem;
+  color: var(--muted);
+  font-family: ui-monospace, monospace;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 0.4rem;
+  padding: 0.3rem 0.45rem;
+  margin-top: 0.4rem;
+  word-break: break-word;
+}
+.service-manage-link {
+  align-self: flex-start;
+  margin-top: 0.5rem;
+  background: transparent;
+  border: none;
+  color: var(--accent);
+  cursor: pointer;
+  font-size: 0.78rem;
+  padding: 0;
+}
+.service-manage-link:hover { text-decoration: underline; }
 
 /* ── Auth notice ────────────────────────────────────────────── */
 .auth-notice {

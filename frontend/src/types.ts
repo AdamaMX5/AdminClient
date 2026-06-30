@@ -9,6 +9,7 @@ export interface ServerGroup {
   profileUrl?: string;
   matrixUrl?: string;
   gitServiceUrl?: string;
+  landingUrl?: string;
 }
 
 export interface Config {
@@ -29,4 +30,5 @@ export interface HealthResult {
   status: 'ok' | 'error' | 'unconfigured';
   code?: number;
   latency?: number;
+  helloMessage?: string;
 }
