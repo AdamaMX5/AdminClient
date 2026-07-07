@@ -9,6 +9,7 @@ export interface ServerGroup {
   profileUrl?: string;
   matrixUrl?: string;
   gitServiceUrl?: string;
+  mediaServiceUrl?: string;
   landingUrl?: string;
 }
 

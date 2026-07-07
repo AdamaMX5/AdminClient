@@ -7,11 +7,12 @@ import MonitorSection from './sections/Monitor';
 import ServicesSection from './sections/Services';
 import AuthServiceSection from './sections/AuthService';
 import GitServiceSection from './sections/GitService';
+import MediaServiceSection from './sections/MediaService';
 import FreeSchoolSection from './sections/FreeSchool';
 import MigrationSection from './sections/Migration';
 import SettingsSection from './sections/Settings';
 
-export type SectionId = 'monitor' | 'services' | 'auth-service' | 'git-service' | 'freeschool' | 'migration' | 'settings';
+export type SectionId = 'monitor' | 'services' | 'auth-service' | 'git-service' | 'media-service' | 'freeschool' | 'migration' | 'settings';
 
 export default function App() {
   const [section, setSection] = useState<SectionId>('monitor');
@@ -65,6 +66,9 @@ export default function App() {
         )}
         {section === 'git-service' && (
           <GitServiceSection session={session} activeGroup={activeGroup} />
+        )}
+        {section === 'media-service' && (
+          <MediaServiceSection session={session} activeGroup={activeGroup} />
         )}
         {section === 'freeschool' && (
           <FreeSchoolSection session={session} activeGroup={activeGroup} />

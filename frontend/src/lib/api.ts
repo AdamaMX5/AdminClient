@@ -49,6 +49,7 @@ export async function checkUrl(url: string): Promise<{ ok: boolean; code?: numbe
 const SERVICE_DEFS: { key: keyof ServerGroup; label: string; icon: string }[] = [
   { key: 'authServiceUrl', label: 'AuthService',   icon: '🔐' },
   { key: 'gitServiceUrl',  label: 'GitService',    icon: '🔧' },
+  { key: 'mediaServiceUrl', label: 'MediaService', icon: '🖼️' },
   { key: 'officeUrl',      label: 'VirtualOffice', icon: '🏢' },
   { key: 'landingUrl',     label: 'FreeSchule',    icon: '🏫' },
   { key: 'liveUrl',        label: 'LiveKit',       icon: '🎥' },

@@ -14,6 +14,7 @@ interface Props {
 const SECTION_FOR_KEY: Partial<Record<string, SectionId>> = {
   authServiceUrl: 'auth-service',
   gitServiceUrl:  'git-service',
+  mediaServiceUrl: 'media-service',
 };
 
 export default function ServicesSection({ activeGroup, groupName, onSection }: Props) {

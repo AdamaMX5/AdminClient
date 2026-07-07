@@ -7,7 +7,7 @@ interface Props {
   onUpdate: (cfg: Config) => void;
 }
 
-const EXTRA_KEYS: (keyof ServerGroup)[] = ['officeUrl', 'presenceUrl', 'liveUrl', 'recordingUrl', 'profileUrl', 'matrixUrl', 'gitServiceUrl', 'landingUrl'];
+const EXTRA_KEYS: (keyof ServerGroup)[] = ['officeUrl', 'presenceUrl', 'liveUrl', 'recordingUrl', 'profileUrl', 'matrixUrl', 'gitServiceUrl', 'mediaServiceUrl', 'landingUrl'];
 
 interface GroupFormState {
   domain: string;
@@ -21,12 +21,13 @@ interface GroupFormState {
   profileUrl: string;
   matrixUrl: string;
   gitServiceUrl: string;
+  mediaServiceUrl: string;
   landingUrl: string;
 }
 
 const EMPTY_FORM: GroupFormState = {
   domain: '', name: '', authServiceUrl: '', freeSchoolUrl: '',
-  officeUrl: '', presenceUrl: '', liveUrl: '', recordingUrl: '', profileUrl: '', matrixUrl: '', gitServiceUrl: '', landingUrl: '',
+  officeUrl: '', presenceUrl: '', liveUrl: '', recordingUrl: '', profileUrl: '', matrixUrl: '', gitServiceUrl: '', mediaServiceUrl: '', landingUrl: '',
 };
 
 function apiFetch(path: string, token: string, opts: RequestInit = {}): Promise<Response> {
@@ -69,6 +70,7 @@ export default function SettingsSection({ config, session, onUpdate }: Props) {
       profileUrl:     `https://profile.${base}`,
       matrixUrl:      `https://matrix.${base}`,
       gitServiceUrl:  `https://git.${base}`,
+      mediaServiceUrl: `https://media.${base}`,
       landingUrl:     `https://${base}`,
     }));
   }
@@ -87,6 +89,7 @@ export default function SettingsSection({ config, session, onUpdate }: Props) {
       profileUrl:     g.profileUrl ?? '',
       matrixUrl:      g.matrixUrl ?? '',
       gitServiceUrl:  g.gitServiceUrl ?? '',
+      mediaServiceUrl: g.mediaServiceUrl ?? '',
       landingUrl:     g.landingUrl ?? '',
     });
     setFormError('');
@@ -116,6 +119,7 @@ export default function SettingsSection({ config, session, onUpdate }: Props) {
       profileUrl:   form.profileUrl   || undefined,
       matrixUrl:    form.matrixUrl    || undefined,
       gitServiceUrl: form.gitServiceUrl || undefined,
+      mediaServiceUrl: form.mediaServiceUrl || undefined,
       landingUrl:   form.landingUrl   || undefined,
     };
 
@@ -254,6 +258,7 @@ export default function SettingsSection({ config, session, onUpdate }: Props) {
             ['profileUrl',   'Profile URL',   'https://profile.example.com'],
             ['matrixUrl',    'Matrix URL',    'https://matrix.example.com'],
             ['gitServiceUrl','GitService URL','https://git.example.com'],
+            ['mediaServiceUrl','MediaService URL','https://media.example.com'],
             ['landingUrl',   'FreeSchule Landing URL','https://example.com'],
           ] as [keyof GroupFormState, string, string][]
         ).map(([key, label, placeholder]) => (

@@ -400,6 +400,52 @@ tr:hover td { background: rgba(255,255,255,0.02); }
 }
 .service-manage-link:hover { text-decoration: underline; }
 
+/* ── MediaService ───────────────────────────────────────────── */
+.breadcrumbs { display: flex; align-items: center; flex-wrap: wrap; gap: 0.1rem; margin-bottom: 1rem; }
+.breadcrumb-btn {
+  background: transparent;
+  border: none;
+  color: var(--accent);
+  cursor: pointer;
+  font-size: 0.85rem;
+  padding: 0.15rem 0.3rem;
+  border-radius: 0.3rem;
+}
+.breadcrumb-btn:hover { background: var(--bg); text-decoration: underline; }
+.breadcrumb-sep { color: var(--muted); margin: 0 0.1rem; }
+
+.file-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 1rem;
+}
+.file-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 0.75rem;
+  padding: 0.85rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35rem;
+  text-align: center;
+  font-size: 0.8rem;
+  color: var(--text);
+}
+.folder-card { cursor: pointer; font-family: inherit; }
+.folder-card:hover { border-color: var(--accent); }
+.file-card-icon { font-size: 2rem; }
+.file-card-thumb {
+  width: 100%;
+  height: 90px;
+  object-fit: cover;
+  border-radius: 0.5rem;
+  background: var(--bg);
+}
+.file-card-name { font-weight: 600; word-break: break-word; }
+.file-card-meta { color: var(--muted); font-size: 0.72rem; }
+.file-card-actions { display: flex; gap: 0.4rem; margin-top: 0.3rem; }
+
 /* ── Auth notice ────────────────────────────────────────────── */
 .auth-notice {
   display: flex;

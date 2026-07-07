@@ -16,6 +16,7 @@ const NAV_ITEMS: { id: SectionId; label: string }[] = [
   { id: 'services',     label: 'Services' },
   { id: 'auth-service', label: 'AuthService' },
   { id: 'git-service',  label: 'GitService' },
+  { id: 'media-service', label: 'MediaService' },
   { id: 'freeschool',   label: 'FreeSchool' },
   { id: 'migration',    label: 'Migration' },
   { id: 'settings',     label: 'Einstellungen' },
