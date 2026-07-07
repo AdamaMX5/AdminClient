@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import type { Session, ServiceConfig } from '../types';
-import { authFetch, fsFetch } from '../lib/api';
+import { authFetch } from '../lib/api';
 
 interface Props { session: Session; services: ServiceConfig; }
 
@@ -42,10 +42,10 @@ export default function MigrationSection({ session, services }: Props) {
   const [loading, setLoading]   = useState(false);
   const [runEnabled, setRunEnabled] = useState(false);
 
-  const canUse = !!(session.authToken && session.freeSchoolToken);
+  const canUse = !!session.authToken;
 
   async function fetchExport(): Promise<FsExportUser[]> {
-    const res = await fsFetch(`${services.freeSchoolUrl}/admin/export/users`);
+    const res = await authFetch(`${services.freeSchoolUrl}/admin/export/users`);
     if (!res.ok) throw new Error(`FreeSchool Export fehlgeschlagen: ${res.status}`);
     return res.json() as Promise<FsExportUser[]>;
   }
@@ -106,7 +106,7 @@ export default function MigrationSection({ session, services }: Props) {
           <h1>Migration</h1>
           <span className="badge warn">FreeSchool → AuthService</span>
         </div>
-        <div className="auth-notice"><p>Bitte mit AuthService und FreeSchool anmelden, um die Migration zu nutzen.</p></div>
+        <div className="auth-notice"><p>Bitte anmelden, um die Migration zu nutzen.</p></div>
       </>
     );
   }

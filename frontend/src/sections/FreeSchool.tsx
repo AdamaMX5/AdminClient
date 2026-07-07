@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import type { Session, ServiceConfig } from '../types';
-import { fsFetch } from '../lib/api';
+import { authFetch } from '../lib/api';
 
 interface Props { session: Session; services: ServiceConfig; }
 
@@ -31,7 +31,7 @@ function UsersTab({ services }: { services: ServiceConfig }) {
   async function load() {
     setError('');
     try {
-      const res = await fsFetch(`${services.freeSchoolUrl}/admin/users`);
+      const res = await authFetch(`${services.freeSchoolUrl}/admin/users`);
       if (!res.ok) { setError(`Fehler ${res.status}`); return; }
       setUsers(await res.json() as FsUser[]);
     } catch (e: unknown) { setError(String(e)); }
@@ -41,7 +41,7 @@ function UsersTab({ services }: { services: ServiceConfig }) {
     if (!editUser) return;
     setSaving(true);
     try {
-      const res = await fsFetch(`${services.freeSchoolUrl}/admin/user/${editUser.id}/roles`, {
+      const res = await authFetch(`${services.freeSchoolUrl}/admin/user/${editUser.id}/roles`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ roles: editRoles }),
@@ -115,7 +115,7 @@ function BackupTab({ services }: { services: ServiceConfig }) {
     const path     = type === 'json' ? '/admin/backup/json' : '/admin/backup';
     const filename = type === 'json' ? 'backup.json' : 'backup.sql';
     try {
-      const res = await fsFetch(`${services.freeSchoolUrl}${path}`);
+      const res = await authFetch(`${services.freeSchoolUrl}${path}`);
       if (!res.ok) { alert(`Fehler ${res.status}`); return; }
       const blob = await res.blob();
       const a = document.createElement('a');
@@ -140,7 +140,7 @@ function BackupTab({ services }: { services: ServiceConfig }) {
 export default function FreeSchoolSection({ session, services }: Props) {
   const [tab, setTab] = useState<'users' | 'backup'>('users');
 
-  if (!session.freeSchoolToken) {
+  if (!session.authToken) {
     return (
       <>
         <div className="section-header">

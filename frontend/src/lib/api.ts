@@ -10,15 +10,6 @@ export async function authFetch(url: string, opts: RequestInit = {}): Promise<Re
   });
 }
 
-export async function fsFetch(url: string, opts: RequestInit = {}): Promise<Response> {
-  const token = loadSession().freeSchoolToken;
-  if (!token) throw new Error('Nicht angemeldet (FreeSchool)');
-  return fetch(url, {
-    ...opts,
-    headers: { Authorization: `Bearer ${token}`, ...(opts.headers ?? {}) },
-  });
-}
-
 export async function checkUrl(url: string): Promise<{ ok: boolean; code?: number; latency: number; helloMessage?: string; version?: string }> {
   const start = Date.now();
   try {

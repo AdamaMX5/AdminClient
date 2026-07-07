@@ -26,60 +26,37 @@ export default function Sidebar({ section, onSection, session, services, onLogin
   const [loading, setLoading]   = useState(false);
   const [error, setError]       = useState('');
 
-  const isLoggedIn = !!(session.authToken || session.freeSchoolToken);
+  const isLoggedIn = !!session.authToken;
 
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
     setError('');
 
-    if (!services.authServiceUrl && !services.freeSchoolUrl) {
-      setError('Keine Service-URLs konfiguriert (VITE_AUTH_SERVICE_URL / VITE_FREESCHOOL_URL fehlen).');
+    if (!services.authServiceUrl) {
+      setError('Keine AuthService-URL konfiguriert (VITE_AUTH_SERVICE_URL fehlt).');
       setLoading(false);
       return;
     }
 
-    const newSession: Session = { userEmail: email };
-    let authOk = false;
-    let fsOk   = false;
-
-    if (services.authServiceUrl) {
-      try {
-        const r = await fetch(`${services.authServiceUrl}/user/login`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email, password }),
-        });
-        if (r.ok) {
-          const data = await r.json() as { access_token?: string };
-          if (data.access_token) { newSession.authToken = data.access_token; authOk = true; }
-        }
-      } catch {}
-    }
-
-    if (services.freeSchoolUrl) {
-      try {
-        const r = await fetch(`${services.freeSchoolUrl}/user/login`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email, password }),
-        });
-        if (r.ok) {
-          const data = await r.json() as { jwt?: string };
-          if (data.jwt) { newSession.freeSchoolToken = data.jwt; fsOk = true; }
-        }
-      } catch {}
-    }
-
-    if (!authOk && !fsOk) {
+    try {
+      const r = await fetch(`${services.authServiceUrl}/user/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
+      const data = r.ok ? await r.json() as { access_token?: string } : null;
+      if (!data?.access_token) {
+        setError('Login fehlgeschlagen. Bitte E-Mail und Passwort prüfen.');
+        setLoading(false);
+        return;
+      }
+      onLogin({ userEmail: email, authToken: data.access_token });
+      setEmail('');
+      setPassword('');
+    } catch {
       setError('Login fehlgeschlagen. Bitte E-Mail und Passwort prüfen.');
-      setLoading(false);
-      return;
     }
-
-    onLogin(newSession);
-    setEmail('');
-    setPassword('');
     setLoading(false);
   }
 
@@ -105,12 +82,7 @@ export default function Sidebar({ section, onSection, session, services, onLogin
           <>
             <span className="user-email">{session.userEmail}</span>
             <div className="service-status">
-              <span className={`badge ${session.authToken ? 'ok' : 'warn'}`}>
-                AuthService {session.authToken ? '✓' : '✗'}
-              </span>
-              <span className={`badge ${session.freeSchoolToken ? 'ok' : 'warn'}`}>
-                FreeSchool {session.freeSchoolToken ? '✓' : '✗'}
-              </span>
+              <span className="badge ok">AuthService ✓</span>
             </div>
             <button className="btn-ghost" onClick={onLogout}>Abmelden</button>
           </>

@@ -13,7 +13,6 @@ export interface ServiceConfig {
 export interface Session {
   userEmail?: string;
   authToken?: string;
-  freeSchoolToken?: string;
 }
 
 export interface HealthResult {
