@@ -1,5 +1,4 @@
 import { Request, Response, NextFunction } from 'express';
-import { getActiveGroup } from './configStore';
 
 /**
  * Decodes a JWT payload without verifying signature.
@@ -26,41 +25,6 @@ export function isTokenExpiring(token: string | undefined, bufferSeconds = 60): 
 }
 
 /**
- * Refreshes the AuthService access token using the stored refresh token.
- * Updates req.session.authToken on success.
- * Returns false if refresh fails.
- */
-export async function refreshAuthToken(req: Request): Promise<boolean> {
-  const refreshToken = req.session.authRefreshToken;
-  if (!refreshToken) return false;
-
-  try {
-    const res = await fetch(`${getActiveGroup().authServiceUrl}/user/refresh`, {
-      method: 'POST',
-      headers: { Cookie: `refresh_token=${refreshToken}` },
-    });
-    if (!res.ok) return false;
-    const data = await res.json() as { access_token: string };
-    req.session.authToken = data.access_token;
-    return true;
-  } catch {
-    return false;
-  }
-}
-
-/**
- * Middleware: ensures the request has a valid session.
- * Returns 401 JSON if not authenticated.
- */
-export function requireSession(req: Request, res: Response, next: NextFunction): void {
-  if (!req.session.userEmail) {
-    res.status(401).json({ error: 'Not authenticated', code: 'SESSION_EXPIRED' });
-    return;
-  }
-  next();
-}
-
-/**
  * Middleware: requires a valid non-expired Bearer JWT in the Authorization header.
  */
 export function requireJwt(req: Request, res: Response, next: NextFunction): void {
@@ -75,41 +39,4 @@ export function requireJwt(req: Request, res: Response, next: NextFunction): voi
     return;
   }
   next();
-}
-
-/**
- * Generic proxy helper — forwards the request to `targetUrl` with a Bearer token.
- * Handles JSON bodies and auto-refreshes the AuthService token if needed.
- */
-export async function proxyToService(
-  req: Request,
-  res: Response,
-  targetUrl: string,
-  token: string,
-): Promise<void> {
-  const headers: Record<string, string> = {
-    Authorization: `Bearer ${token}`,
-    'Content-Type': 'application/json',
-  };
-
-  const hasBody = ['POST', 'PUT', 'PATCH'].includes(req.method);
-
-  const upstream = await fetch(targetUrl, {
-    method: req.method,
-    headers,
-    body: hasBody ? JSON.stringify(req.body) : undefined,
-  });
-
-  const contentType = upstream.headers.get('content-type') ?? '';
-  const disposition = upstream.headers.get('content-disposition');
-
-  if (disposition) res.setHeader('Content-Disposition', disposition);
-
-  if (contentType.includes('application/json')) {
-    const data: unknown = await upstream.json();
-    res.status(upstream.status).json(data);
-  } else {
-    const text = await upstream.text();
-    res.status(upstream.status).send(text);
-  }
 }

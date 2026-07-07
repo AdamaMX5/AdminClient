@@ -4,21 +4,17 @@
   "description": "Admin Client for controlling Freischule Microservices",
   "main": "dist/server.js",
   "scripts": {
-    "build": "tsc",
-    "build:admin": "cd frontend && npm run build && cp dist/index.html ../src/public/index.html && cp dist/index.html ../admin.html",
+    "build": "tsc && node -e \"require('fs').cpSync('src/public','dist/public',{recursive:true})\"",
+    "build:admin": "cd frontend && npm run build && cp dist/index.html ../src/public/index.html",
     "start": "node dist/server.js",
     "dev": "ts-node-dev --respawn --transpile-only src/server.ts"
   },
   "dependencies": {
     "dotenv": "^16.4.5",
-    "express": "^4.19.2",
-    "express-session": "^1.18.0",
-    "multer": "^1.4.5-lts.1"
+    "express": "^4.19.2"
   },
   "devDependencies": {
     "@types/express": "^4.17.21",
-    "@types/express-session": "^1.18.0",
-    "@types/multer": "^1.4.11",
     "@types/node": "^20.14.0",
     "ts-node-dev": "^2.0.0",
     "typescript": "^5.4.5"
