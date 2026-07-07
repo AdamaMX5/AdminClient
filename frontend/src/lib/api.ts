@@ -19,7 +19,7 @@ export async function fsFetch(url: string, opts: RequestInit = {}): Promise<Resp
   });
 }
 
-export async function checkUrl(url: string): Promise<{ ok: boolean; code?: number; latency: number; helloMessage?: string }> {
+export async function checkUrl(url: string): Promise<{ ok: boolean; code?: number; latency: number; helloMessage?: string; version?: string }> {
   const start = Date.now();
   try {
     const controller = new AbortController();
@@ -30,17 +30,19 @@ export async function checkUrl(url: string): Promise<{ ok: boolean; code?: numbe
     clearTimeout(timer);
 
     let helloMessage: string | undefined;
+    let version: string | undefined;
     try {
       const text = await r.text();
       try {
         const json = JSON.parse(text);
         helloMessage = typeof json === 'string' ? json : (json.message ?? JSON.stringify(json));
+        if (json && typeof json === 'object' && typeof json.version === 'string') version = json.version;
       } catch {
         helloMessage = text.trim().slice(0, 200);
       }
     } catch { /* body unreadable (e.g. CORS) — leave undefined */ }
 
-    return { ok: r.status < 500, code: r.status, latency: Date.now() - start, helloMessage };
+    return { ok: r.status < 500, code: r.status, latency: Date.now() - start, helloMessage, version };
   } catch {
     return { ok: false, latency: Date.now() - start };
   }
@@ -73,6 +75,7 @@ export async function checkAllServices(group: ServerGroup): Promise<HealthResult
         code: check.code,
         latency: check.latency,
         helloMessage: check.helloMessage,
+        version: check.version,
       };
     })
   );

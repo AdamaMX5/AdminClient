@@ -59,6 +59,7 @@ export default function ServicesSection({ activeGroup, groupName, onSection }: P
                 <div className="service-card-header">
                   <span className="service-icon">{s.icon}</span>
                   <span className="service-name">{s.label}</span>
+                  {s.version && <span className="service-version">v{s.version}</span>}
                   {s.latency != null && s.status !== 'unconfigured' && (
                     <span className="service-latency">{s.latency} ms</span>
                   )}

@@ -23,13 +23,18 @@ router.post('/active', requireJwt, (req: Request, res: Response): void => {
 
 /** POST /api/config/groups — create or update */
 router.post('/groups', requireJwt, (req: Request, res: Response): void => {
-  const { name, authServiceUrl, freeSchoolUrl, officeUrl, presenceUrl, liveUrl, recordingUrl, profileUrl, matrixUrl } =
-    req.body as Record<string, string>;
+  const {
+    name, authServiceUrl, freeSchoolUrl, officeUrl, presenceUrl, liveUrl, recordingUrl, profileUrl, matrixUrl,
+    gitServiceUrl, mediaServiceUrl, landingUrl,
+  } = req.body as Record<string, string>;
   if (!name || !authServiceUrl || !freeSchoolUrl) {
     res.status(400).json({ error: 'name, authServiceUrl und freeSchoolUrl sind erforderlich' });
     return;
   }
-  configStore.upsertGroup({ name, authServiceUrl, freeSchoolUrl, officeUrl, presenceUrl, liveUrl, recordingUrl, profileUrl, matrixUrl });
+  configStore.upsertGroup({
+    name, authServiceUrl, freeSchoolUrl, officeUrl, presenceUrl, liveUrl, recordingUrl, profileUrl, matrixUrl,
+    gitServiceUrl, mediaServiceUrl, landingUrl,
+  });
   res.json({ ok: true });
 });
 

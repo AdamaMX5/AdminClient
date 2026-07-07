@@ -32,4 +32,5 @@ export interface HealthResult {
   code?: number;
   latency?: number;
   helloMessage?: string;
+  version?: string;
 }

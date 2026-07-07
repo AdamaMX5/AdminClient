@@ -114,10 +114,19 @@ export default function GitServiceSection({ session, activeGroup }: Props) {
   const [keys, setKeys]       = useState<ApiKey[] | null>(null);
   const [error, setError]     = useState('');
   const [showModal, setShowModal] = useState(false);
+  const [version, setVersion] = useState('');
 
   const baseUrl = activeGroup.gitServiceUrl;
 
   useEffect(() => { if (session.authToken && baseUrl) load(); }, [baseUrl]);
+
+  useEffect(() => {
+    if (!baseUrl) { setVersion(''); return; }
+    fetch(`${baseUrl}/health`)
+      .then(r => r.ok ? r.json() : null)
+      .then((data: { version?: string } | null) => setVersion(data?.version ?? ''))
+      .catch(() => setVersion(''));
+  }, [baseUrl]);
 
   async function load() {
     setError('');
@@ -168,6 +177,7 @@ export default function GitServiceSection({ session, activeGroup }: Props) {
       <div className="section-header">
         <h1>GitService</h1>
         <span className="badge ok">verbunden</span>
+        {version && <span className="service-version">v{version}</span>}
       </div>
 
       <div className="toolbar">
