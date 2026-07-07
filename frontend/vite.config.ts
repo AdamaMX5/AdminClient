@@ -19,6 +19,11 @@ export default defineConfig({
   },
   plugins: [react(), viteSingleFile()],
   root: __dirname,
+  // Read .env files from the repo root instead of frontend/, so there's a single
+  // .env per deployment shared with the backend. Vite only ever inlines
+  // VITE_-prefixed keys into the client bundle — everything else in that file
+  // (e.g. plain AUTH_SERVICE_URL, used server-side for /health) stays server-only.
+  envDir: path.resolve(__dirname, '..'),
   build: {
     outDir: path.resolve(__dirname, 'dist'),
     emptyOutDir: true,
