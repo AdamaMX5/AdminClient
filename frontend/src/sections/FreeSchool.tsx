@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
-import type { Session, ServerGroup } from '../types';
+import type { Session, ServiceConfig } from '../types';
 import { fsFetch } from '../lib/api';
 
-interface Props { session: Session; activeGroup: ServerGroup; }
+interface Props { session: Session; services: ServiceConfig; }
 
 interface FsUser {
   id: string;
@@ -19,7 +19,7 @@ function RolePills({ roles }: { roles?: string[] }) {
   return <>{roles.map(r => <span key={r} className="role-pill">{r}</span>)}</>;
 }
 
-function UsersTab({ activeGroup }: { activeGroup: ServerGroup }) {
+function UsersTab({ services }: { services: ServiceConfig }) {
   const [users, setUsers]       = useState<FsUser[] | null>(null);
   const [error, setError]       = useState('');
   const [editUser, setEditUser] = useState<FsUser | null>(null);
@@ -31,7 +31,7 @@ function UsersTab({ activeGroup }: { activeGroup: ServerGroup }) {
   async function load() {
     setError('');
     try {
-      const res = await fsFetch(`${activeGroup.freeSchoolUrl}/admin/users`);
+      const res = await fsFetch(`${services.freeSchoolUrl}/admin/users`);
       if (!res.ok) { setError(`Fehler ${res.status}`); return; }
       setUsers(await res.json() as FsUser[]);
     } catch (e: unknown) { setError(String(e)); }
@@ -41,7 +41,7 @@ function UsersTab({ activeGroup }: { activeGroup: ServerGroup }) {
     if (!editUser) return;
     setSaving(true);
     try {
-      const res = await fsFetch(`${activeGroup.freeSchoolUrl}/admin/user/${editUser.id}/roles`, {
+      const res = await fsFetch(`${services.freeSchoolUrl}/admin/user/${editUser.id}/roles`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ roles: editRoles }),
@@ -110,12 +110,12 @@ function UsersTab({ activeGroup }: { activeGroup: ServerGroup }) {
   );
 }
 
-function BackupTab({ activeGroup }: { activeGroup: ServerGroup }) {
+function BackupTab({ services }: { services: ServiceConfig }) {
   async function download(type: 'json' | 'sql') {
     const path     = type === 'json' ? '/admin/backup/json' : '/admin/backup';
     const filename = type === 'json' ? 'backup.json' : 'backup.sql';
     try {
-      const res = await fsFetch(`${activeGroup.freeSchoolUrl}${path}`);
+      const res = await fsFetch(`${services.freeSchoolUrl}${path}`);
       if (!res.ok) { alert(`Fehler ${res.status}`); return; }
       const blob = await res.blob();
       const a = document.createElement('a');
@@ -137,7 +137,7 @@ function BackupTab({ activeGroup }: { activeGroup: ServerGroup }) {
   );
 }
 
-export default function FreeSchoolSection({ session, activeGroup }: Props) {
+export default function FreeSchoolSection({ session, services }: Props) {
   const [tab, setTab] = useState<'users' | 'backup'>('users');
 
   if (!session.freeSchoolToken) {
@@ -162,8 +162,8 @@ export default function FreeSchoolSection({ session, activeGroup }: Props) {
         <button className={`tab-btn${tab === 'users'  ? ' active' : ''}`} onClick={() => setTab('users')}>Benutzer</button>
         <button className={`tab-btn${tab === 'backup' ? ' active' : ''}`} onClick={() => setTab('backup')}>Backup</button>
       </div>
-      {tab === 'users'  && <UsersTab  activeGroup={activeGroup} />}
-      {tab === 'backup' && <BackupTab activeGroup={activeGroup} />}
+      {tab === 'users'  && <UsersTab  services={services} />}
+      {tab === 'backup' && <BackupTab services={services} />}
     </>
   );
 }

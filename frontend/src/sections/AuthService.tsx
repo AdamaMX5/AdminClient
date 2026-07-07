@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
-import type { Session, ServerGroup } from '../types';
+import type { Session, ServiceConfig } from '../types';
 import { authFetch } from '../lib/api';
 
-interface Props { session: Session; activeGroup: ServerGroup; }
+interface Props { session: Session; services: ServiceConfig; }
 
 interface AuthUser {
   id: string;
@@ -94,7 +94,7 @@ function PermissionsPanel({ user, baseUrl, onClose, onChanged }: {
   );
 }
 
-function UsersTab({ activeGroup }: { activeGroup: ServerGroup }) {
+function UsersTab({ services }: { services: ServiceConfig }) {
   const [users, setUsers]   = useState<AuthUser[] | null>(null);
   const [error, setError]   = useState('');
   const [editUser, setEditUser] = useState<AuthUser | null>(null);
@@ -107,7 +107,7 @@ function UsersTab({ activeGroup }: { activeGroup: ServerGroup }) {
   async function load() {
     setError('');
     try {
-      const res = await authFetch(`${activeGroup.authServiceUrl}/admin/users`);
+      const res = await authFetch(`${services.authServiceUrl}/admin/users`);
       if (!res.ok) { setError(`Fehler ${res.status}`); return; }
       const data = await res.json() as { users?: AuthUser[] } | AuthUser[];
       const list = Array.isArray(data) ? data : data.users ?? [];
@@ -124,7 +124,7 @@ function UsersTab({ activeGroup }: { activeGroup: ServerGroup }) {
     setSaving(true);
     const roles = rolesInput.split(',').map(r => r.trim().toUpperCase()).filter(Boolean);
     try {
-      const res = await authFetch(`${activeGroup.authServiceUrl}/admin/set_roles`, {
+      const res = await authFetch(`${services.authServiceUrl}/admin/set_roles`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ user_id: editUser.id, roles }),
@@ -141,7 +141,7 @@ function UsersTab({ activeGroup }: { activeGroup: ServerGroup }) {
     const form = new FormData();
     form.append('file', file);
     try {
-      const res = await authFetch(`${activeGroup.authServiceUrl}/admin/users/import`, { method: 'POST', body: form });
+      const res = await authFetch(`${services.authServiceUrl}/admin/users/import`, { method: 'POST', body: form });
       const d = await res.json() as { created?: number; updated?: number; skipped?: number };
       alert(`Import: ${d.created ?? 0} erstellt, ${d.updated ?? 0} aktualisiert, ${d.skipped ?? 0} übersprungen`);
       load();
@@ -212,7 +212,7 @@ function UsersTab({ activeGroup }: { activeGroup: ServerGroup }) {
       {permUser && (
         <PermissionsPanel
           user={permUser}
-          baseUrl={activeGroup.authServiceUrl}
+          baseUrl={services.authServiceUrl}
           onClose={() => setPermUser(null)}
           onChanged={load}
         />
@@ -221,14 +221,14 @@ function UsersTab({ activeGroup }: { activeGroup: ServerGroup }) {
   );
 }
 
-function JwtTab({ activeGroup }: { activeGroup: ServerGroup }) {
+function JwtTab({ services }: { services: ServiceConfig }) {
   const [info, setInfo] = useState('–');
   const [loading, setLoading] = useState(false);
 
   async function load() {
     setLoading(true);
     try {
-      const res = await authFetch(`${activeGroup.authServiceUrl}/admin/jwt/key-storage`);
+      const res = await authFetch(`${services.authServiceUrl}/admin/jwt/key-storage`);
       const d = await res.json();
       setInfo(JSON.stringify(d, null, 2));
     } catch (e: unknown) {
@@ -247,7 +247,7 @@ function JwtTab({ activeGroup }: { activeGroup: ServerGroup }) {
   );
 }
 
-export default function AuthServiceSection({ session, activeGroup }: Props) {
+export default function AuthServiceSection({ session, services }: Props) {
   const [tab, setTab] = useState<'users' | 'jwt'>('users');
 
   if (!session.authToken) {
@@ -272,8 +272,8 @@ export default function AuthServiceSection({ session, activeGroup }: Props) {
         <button className={`tab-btn${tab === 'users' ? ' active' : ''}`} onClick={() => setTab('users')}>Benutzer</button>
         <button className={`tab-btn${tab === 'jwt'   ? ' active' : ''}`} onClick={() => setTab('jwt')}>JWT-Schlüssel</button>
       </div>
-      {tab === 'users' && <UsersTab activeGroup={activeGroup} />}
-      {tab === 'jwt'   && <JwtTab   activeGroup={activeGroup} />}
+      {tab === 'users' && <UsersTab services={services} />}
+      {tab === 'jwt'   && <JwtTab   services={services} />}
     </>
   );
 }

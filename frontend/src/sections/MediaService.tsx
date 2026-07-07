@@ -1,8 +1,8 @@
 import { useState } from 'react';
-import type { Session, ServerGroup } from '../types';
+import type { Session, ServiceConfig } from '../types';
 import { authFetch } from '../lib/api';
 
-interface Props { session: Session; activeGroup: ServerGroup; }
+interface Props { session: Session; services: ServiceConfig; }
 
 interface MediaFile {
   id?: string;
@@ -129,7 +129,7 @@ function UploadModal({ baseUrl, appName, folder, onClose, onUploaded }: {
   );
 }
 
-export default function MediaServiceSection({ session, activeGroup }: Props) {
+export default function MediaServiceSection({ session, services }: Props) {
   const [appInput, setAppInput]     = useState('');
   const [appName, setAppName]       = useState('');
   const [path, setPath]             = useState<string[]>([]);
@@ -138,7 +138,7 @@ export default function MediaServiceSection({ session, activeGroup }: Props) {
   const [error, setError]           = useState('');
   const [showUpload, setShowUpload] = useState(false);
 
-  const baseUrl = activeGroup.mediaServiceUrl;
+  const baseUrl = services.mediaServiceUrl;
 
   async function load(app: string, segments: string[]) {
     setLoading(true);
@@ -216,7 +216,7 @@ export default function MediaServiceSection({ session, activeGroup }: Props) {
           <h1>MediaService</h1>
           <span className="badge warn">nicht konfiguriert</span>
         </div>
-        <div className="auth-notice"><p>Keine MediaService-URL in der aktiven Servergruppe. Bitte unter „Einstellungen" hinterlegen.</p></div>
+        <div className="auth-notice"><p>Keine MediaService-URL konfiguriert. Bitte VITE_MEDIA_SERVICE_URL beim Frontend-Build setzen.</p></div>
       </>
     );
   }

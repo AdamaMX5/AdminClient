@@ -1,4 +1,4 @@
-import type { HealthResult, ServerGroup } from '../types';
+import type { HealthResult, ServiceConfig } from '../types';
 import { loadSession } from './session';
 
 export async function authFetch(url: string, opts: RequestInit = {}): Promise<Response> {
@@ -48,7 +48,7 @@ export async function checkUrl(url: string): Promise<{ ok: boolean; code?: numbe
   }
 }
 
-const SERVICE_DEFS: { key: keyof ServerGroup; label: string; icon: string }[] = [
+const SERVICE_DEFS: { key: keyof ServiceConfig; label: string; icon: string }[] = [
   { key: 'authServiceUrl', label: 'AuthService',   icon: '🔐' },
   { key: 'gitServiceUrl',  label: 'GitService',    icon: '🔧' },
   { key: 'mediaServiceUrl', label: 'MediaService', icon: '🖼️' },
@@ -57,13 +57,12 @@ const SERVICE_DEFS: { key: keyof ServerGroup; label: string; icon: string }[] = 
   { key: 'liveUrl',        label: 'LiveKit',       icon: '🎥' },
   { key: 'recordingUrl',   label: 'Recording',     icon: '🎙️' },
   { key: 'profileUrl',     label: 'Profile',       icon: '👤' },
-  { key: 'matrixUrl',      label: 'Matrix',        icon: '💬' },
 ];
 
-export async function checkAllServices(group: ServerGroup): Promise<HealthResult[]> {
+export async function checkAllServices(services: ServiceConfig): Promise<HealthResult[]> {
   return Promise.all(
     SERVICE_DEFS.map(async svc => {
-      const url = group[svc.key] as string | undefined;
+      const url = services[svc.key] as string | undefined;
       if (!url) return { key: svc.key, label: svc.label, icon: svc.icon, url: null, status: 'unconfigured' as const };
       const check = await checkUrl(url);
       return {

@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
-import type { Session, ServerGroup } from '../types';
+import type { Session, ServiceConfig } from '../types';
 import { authFetch } from '../lib/api';
 
-interface Props { session: Session; activeGroup: ServerGroup; }
+interface Props { session: Session; services: ServiceConfig; }
 
 interface ApiKey {
   id: string;
@@ -110,13 +110,13 @@ function CreateKeyModal({ baseUrl, onClose, onCreated }: {
   );
 }
 
-export default function GitServiceSection({ session, activeGroup }: Props) {
+export default function GitServiceSection({ session, services }: Props) {
   const [keys, setKeys]       = useState<ApiKey[] | null>(null);
   const [error, setError]     = useState('');
   const [showModal, setShowModal] = useState(false);
   const [version, setVersion] = useState('');
 
-  const baseUrl = activeGroup.gitServiceUrl;
+  const baseUrl = services.gitServiceUrl;
 
   useEffect(() => { if (session.authToken && baseUrl) load(); }, [baseUrl]);
 
@@ -167,7 +167,7 @@ export default function GitServiceSection({ session, activeGroup }: Props) {
           <h1>GitService</h1>
           <span className="badge warn">nicht konfiguriert</span>
         </div>
-        <div className="auth-notice"><p>Keine GitService-URL in der aktiven Servergruppe. Bitte unter „Einstellungen" hinterlegen.</p></div>
+        <div className="auth-notice"><p>Keine GitService-URL konfiguriert. Bitte VITE_GIT_SERVICE_URL beim Frontend-Build setzen.</p></div>
       </>
     );
   }

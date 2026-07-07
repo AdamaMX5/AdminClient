@@ -1,8 +1,8 @@
 import { useState } from 'react';
-import type { Session, ServerGroup } from '../types';
+import type { Session, ServiceConfig } from '../types';
 import { authFetch, fsFetch } from '../lib/api';
 
-interface Props { session: Session; activeGroup: ServerGroup; }
+interface Props { session: Session; services: ServiceConfig; }
 
 interface FsExportUser {
   id: string;
@@ -36,7 +36,7 @@ function RolePills({ roles }: { roles?: string[] }) {
   return <>{roles.map(r => <span key={r} className="role-pill">{r}</span>)}</>;
 }
 
-export default function MigrationSection({ session, activeGroup }: Props) {
+export default function MigrationSection({ session, services }: Props) {
   const [preview, setPreview]   = useState<ImportItem[] | null>(null);
   const [result, setResult]     = useState<React.ReactNode>(null);
   const [loading, setLoading]   = useState(false);
@@ -45,7 +45,7 @@ export default function MigrationSection({ session, activeGroup }: Props) {
   const canUse = !!(session.authToken && session.freeSchoolToken);
 
   async function fetchExport(): Promise<FsExportUser[]> {
-    const res = await fsFetch(`${activeGroup.freeSchoolUrl}/admin/export/users`);
+    const res = await fsFetch(`${services.freeSchoolUrl}/admin/export/users`);
     if (!res.ok) throw new Error(`FreeSchool Export fehlgeschlagen: ${res.status}`);
     return res.json() as Promise<FsExportUser[]>;
   }
@@ -77,7 +77,7 @@ export default function MigrationSection({ session, activeGroup }: Props) {
       const form   = new FormData();
       form.append('file', blob, 'migration.json');
 
-      const res = await authFetch(`${activeGroup.authServiceUrl}/admin/users/import`, { method: 'POST', body: form });
+      const res = await authFetch(`${services.authServiceUrl}/admin/users/import`, { method: 'POST', body: form });
       const d   = await res.json() as { created?: number; updated?: number; skipped?: number; skipped_reasons?: unknown[]; error?: string; detail?: string };
 
       if (res.ok) {

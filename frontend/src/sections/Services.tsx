@@ -1,11 +1,10 @@
 import { useState, useEffect } from 'react';
-import type { ServerGroup, HealthResult } from '../types';
+import type { ServiceConfig, HealthResult } from '../types';
 import type { SectionId } from '../App';
 import { checkAllServices } from '../lib/api';
 
 interface Props {
-  activeGroup: ServerGroup;
-  groupName: string;
+  services: ServiceConfig;
   onSection: (s: SectionId) => void;
 }
 
@@ -17,17 +16,17 @@ const SECTION_FOR_KEY: Partial<Record<string, SectionId>> = {
   mediaServiceUrl: 'media-service',
 };
 
-export default function ServicesSection({ activeGroup, groupName, onSection }: Props) {
+export default function ServicesSection({ services, onSection }: Props) {
   const [results, setResults] = useState<(HealthResult & { icon: string })[] | null>(null);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     runCheck();
-  }, [groupName]);
+  }, []);
 
   async function runCheck() {
     setLoading(true);
-    const data = await checkAllServices(activeGroup) as (HealthResult & { icon: string })[];
+    const data = await checkAllServices(services) as (HealthResult & { icon: string })[];
     setResults(data);
     setLoading(false);
   }
@@ -36,15 +35,12 @@ export default function ServicesSection({ activeGroup, groupName, onSection }: P
     <>
       <div className="section-header">
         <h1>Services</h1>
-        {groupName && <span className="badge ok">{groupName}</span>}
         <button className="btn btn-secondary" style={{ marginLeft: 'auto' }} onClick={runCheck} disabled={loading}>
           {loading ? 'Prüfe…' : 'Alle prüfen'}
         </button>
       </div>
 
-      {!groupName ? (
-        <p className="loading-text">Keine Servergruppe konfiguriert. Bitte in den Einstellungen eine Gruppe anlegen.</p>
-      ) : loading && !results ? (
+      {loading && !results ? (
         <p className="loading-text">Prüfe Services…</p>
       ) : results ? (
         <div className="services-grid">

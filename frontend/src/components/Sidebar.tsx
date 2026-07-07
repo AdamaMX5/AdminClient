@@ -1,28 +1,26 @@
 import { useState, useRef } from 'react';
-import type { Session, ServerGroup } from '../types';
+import type { Session, ServiceConfig } from '../types';
 import type { SectionId } from '../App';
 
 interface Props {
   section: SectionId;
   onSection: (s: SectionId) => void;
   session: Session;
-  activeGroup: ServerGroup;
+  services: ServiceConfig;
   onLogin: (s: Session) => void;
   onLogout: () => void;
 }
 
 const NAV_ITEMS: { id: SectionId; label: string }[] = [
-  { id: 'monitor',      label: 'Monitor' },
   { id: 'services',     label: 'Services' },
   { id: 'auth-service', label: 'AuthService' },
   { id: 'git-service',  label: 'GitService' },
   { id: 'media-service', label: 'MediaService' },
   { id: 'freeschool',   label: 'FreeSchool' },
   { id: 'migration',    label: 'Migration' },
-  { id: 'settings',     label: 'Einstellungen' },
 ];
 
-export default function Sidebar({ section, onSection, session, activeGroup, onLogin, onLogout }: Props) {
+export default function Sidebar({ section, onSection, session, services, onLogin, onLogout }: Props) {
   const [email, setEmail]       = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading]   = useState(false);
@@ -35,8 +33,8 @@ export default function Sidebar({ section, onSection, session, activeGroup, onLo
     setLoading(true);
     setError('');
 
-    if (!activeGroup.authServiceUrl && !activeGroup.freeSchoolUrl) {
-      setError('Keine Servergruppe konfiguriert.');
+    if (!services.authServiceUrl && !services.freeSchoolUrl) {
+      setError('Keine Service-URLs konfiguriert (VITE_AUTH_SERVICE_URL / VITE_FREESCHOOL_URL fehlen).');
       setLoading(false);
       return;
     }
@@ -45,9 +43,9 @@ export default function Sidebar({ section, onSection, session, activeGroup, onLo
     let authOk = false;
     let fsOk   = false;
 
-    if (activeGroup.authServiceUrl) {
+    if (services.authServiceUrl) {
       try {
-        const r = await fetch(`${activeGroup.authServiceUrl}/user/login`, {
+        const r = await fetch(`${services.authServiceUrl}/user/login`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ email, password }),
@@ -59,9 +57,9 @@ export default function Sidebar({ section, onSection, session, activeGroup, onLo
       } catch {}
     }
 
-    if (activeGroup.freeSchoolUrl) {
+    if (services.freeSchoolUrl) {
       try {
-        const r = await fetch(`${activeGroup.freeSchoolUrl}/user/login`, {
+        const r = await fetch(`${services.freeSchoolUrl}/user/login`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ email, password }),
