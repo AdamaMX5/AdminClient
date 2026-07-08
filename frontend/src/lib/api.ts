@@ -1,5 +1,6 @@
-import type { HealthResult, ServiceConfig } from '../types';
+import type { HealthResult, ServiceConfig, Session } from '../types';
 import { loadSession } from './session';
+import { decodeJwtPayload } from './jwt';
 
 export async function authFetch(url: string, opts: RequestInit = {}): Promise<Response> {
   const token = loadSession().authToken;
@@ -8,6 +9,33 @@ export async function authFetch(url: string, opts: RequestInit = {}): Promise<Re
     ...opts,
     headers: { Authorization: `Bearer ${token}`, ...(opts.headers ?? {}) },
   });
+}
+
+function getCsrfTokenFromCookie(): string | null {
+  const match = document.cookie.match(/(?:^|;\s*)csrf_token=([^;]+)/);
+  return match ? decodeURIComponent(match[1]) : null;
+}
+
+// Silently exchanges the HttpOnly refresh_token cookie (set by AuthService on
+// login) for a fresh access_token. Returns null on any failure — callers
+// decide whether that means "stay logged out" or "log out now".
+export async function refreshAccessToken(authServiceUrl: string): Promise<Session | null> {
+  if (!authServiceUrl) return null;
+  try {
+    const csrfToken = getCsrfTokenFromCookie();
+    const r = await fetch(`${authServiceUrl}/user/refresh`, {
+      method: 'POST',
+      credentials: 'include',
+      headers: csrfToken ? { 'X-CSRF-Token': csrfToken } : {},
+    });
+    if (!r.ok) return null;
+    const data = await r.json() as { access_token?: string };
+    if (!data.access_token) return null;
+    const payload = decodeJwtPayload(data.access_token);
+    return { authToken: data.access_token, userEmail: payload?.email };
+  } catch {
+    return null;
+  }
 }
 
 export async function checkUrl(url: string): Promise<{ ok: boolean; code?: number; latency: number; helloMessage?: string; version?: string }> {
